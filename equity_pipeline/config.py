@@ -38,7 +38,7 @@ class PipelineConfig:
     seq_len: int = 24
 
     # ── Training (neural models) ──────────────────────────────────────────────
-    max_epochs:           int   = 20
+    max_epochs:           int   = 15
     early_stop_patience:  int   = 10
     batch_size:           int   = 512
     lr:                   float = 3e-4

@@ -160,7 +160,7 @@ def main():
             df[col] = np.log1p(df[col].clip(lower=0))
             print(f"[Loader] {col} log-transformed globally")
 
-    df = build_target(df, cfg.id_col, cfg.target_col)
+    df = build_target(df, cfg.id_col, cfg.date_col, cfg.target_col)
     df = df.dropna(subset=list(cfg.features)).reset_index(drop=True)
     # Pre-cast features to float32 once for massive speedup in preprocessing (Issue E)
     df[list(cfg.features)] = df[list(cfg.features)].astype(np.float32)

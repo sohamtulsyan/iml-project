@@ -74,6 +74,7 @@ def load_data(
 def build_target(
     df:         pd.DataFrame,
     id_col:     str = "co_code",
+    date_col:   str = "Month",
     target_col: str = "monthly_gross_return",
     fwd_col:    str = "fwd_return",
 ) -> pd.DataFrame:
@@ -86,7 +87,15 @@ def build_target(
     df[fwd_col] = df.groupby(id_col)[target_col].shift(-1)
     before = len(df)
     df = df.dropna(subset=[fwd_col]).reset_index(drop=True)
-    print(f"[Loader] fwd_return: {before - len(df):,} rows dropped (last month per firm). "
+    
+    # Cross-sectional Z-score the target (per month)
+    # This makes the target stable and easier for neural models to learn.
+    grouped = df.groupby(date_col)[fwd_col]
+    mu = grouped.transform("mean")
+    sd = grouped.transform("std").replace(0, 1).fillna(1)
+    df[fwd_col] = (df[fwd_col] - mu) / sd
+    
+    print(f"[Loader] fwd_return: Cross-sectionally Z-scored | {before - len(df):,} rows dropped. "
           f"Remaining: {len(df):,}")
     return df
 

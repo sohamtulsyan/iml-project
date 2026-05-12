@@ -75,8 +75,7 @@ class TransformerModel(BaseModel):
         num_layers:      int   = 2,
         dim_feedforward: int   = 256,
         dropout:         float = 0.1,
-        lr:              float = 3e-4,
-        batch_size:      int   = 512,
+        batch_size:      int   = 256,
         max_epochs:      int   = 100,
         patience:        int   = 10,
         grad_clip:       float = 1.0,
@@ -89,8 +88,8 @@ class TransformerModel(BaseModel):
         self.num_layers      = num_layers
         self.dim_feedforward = dim_feedforward
         self.dropout         = dropout
-        self.lr              = lr
-        self.batch_size      = batch_size
+        self.lr              = 1e-4
+        self.batch_size      = 256
         self.max_epochs      = max_epochs
         self.patience        = patience
         self.grad_clip       = grad_clip
@@ -155,7 +154,7 @@ class TransformerModel(BaseModel):
                 is_mps = (self._device.type == "mps")
                 Xb = Xb.to(self._device, non_blocking=not is_mps)
                 yb = yb.to(self._device, non_blocking=not is_mps)
-                yb = ((yb - yb.mean()) / yb.std().clamp(min=1e-8)).unsqueeze(1)
+                yb = yb.unsqueeze(1)
                 optimizer.zero_grad(set_to_none=True)
                 if use_amp:
                     with torch.amp.autocast("cuda"):
@@ -175,9 +174,7 @@ class TransformerModel(BaseModel):
             with torch.no_grad():
                 X_val_batch = X_val_t.to(self._device)
                 val_pred = net(X_val_batch).cpu().numpy().flatten()
-            # Normalize validation targets to match training scale for IC calculation
-            y_val_norm = (y_val - y_val.mean()) / y_val.std().clip(min=1e-8)
-            val_ic = spearman_ic(y_val_norm, val_pred)
+            val_ic = spearman_ic(y_val, val_pred)
 
             if val_ic > best_ic:
                 best_ic = val_ic; best_state = copy.deepcopy(net.state_dict())

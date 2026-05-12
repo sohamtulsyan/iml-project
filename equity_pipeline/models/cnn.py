@@ -84,7 +84,7 @@ class CNNModel(BaseModel):
         n_conv_blocks:int   = 1,
         dropout:     float = 0.1,
         lr:          float = 3e-4,
-        batch_size:  int   = 512,
+        batch_size:  int   = 256,
         max_epochs:  int   = 100,
         patience:    int   = 10,
         grad_clip:   float = 1.0,
@@ -96,8 +96,8 @@ class CNNModel(BaseModel):
         self.kernel_sizes = kernel_sizes
         self.n_conv_blocks= n_conv_blocks
         self.dropout      = dropout
-        self.lr           = lr
-        self.batch_size   = batch_size
+        self.lr           = 1e-4
+        self.batch_size   = 256
         self.max_epochs   = max_epochs
         self.patience     = patience
         self.grad_clip    = grad_clip
@@ -158,7 +158,7 @@ class CNNModel(BaseModel):
                 is_mps = (self._device.type == "mps")
                 Xb = Xb.to(self._device, non_blocking=not is_mps)
                 yb = yb.to(self._device, non_blocking=not is_mps)
-                yb = ((yb - yb.mean()) / yb.std().clamp(min=1e-8)).unsqueeze(1)
+                yb = yb.unsqueeze(1)
                 optimizer.zero_grad(set_to_none=True)
                 if use_amp:
                     with torch.amp.autocast("cuda"):
