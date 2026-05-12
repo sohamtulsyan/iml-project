@@ -7,11 +7,22 @@ Priority: CUDA → MPS → CPU.
 import os
 import torch
 
+# Essential for stability on Apple Silicon MPS
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
-def get_device(device: str = "auto") -> torch.device:
-    """Return optimal torch.device and configure backend flags."""
-    if device != "auto":
-        return torch.device(device)
+
+_DEVICE_CACHE = {}
+
+def get_device(device_str: str = "auto") -> torch.device:
+    """Return optimal torch.device (cached) and configure backend flags."""
+    global _DEVICE_CACHE
+    if device_str in _DEVICE_CACHE:
+        return _DEVICE_CACHE[device_str]
+
+    if device_str != "auto":
+        dev = torch.device(device_str)
+        _DEVICE_CACHE[device_str] = dev
+        return dev
 
     if torch.cuda.is_available():
         dev = torch.device("cuda")
@@ -23,11 +34,11 @@ def get_device(device: str = "auto") -> torch.device:
     elif torch.backends.mps.is_available():
         dev = torch.device("mps")
         print("[Device] Apple Silicon MPS")
-        # Do NOT set_num_threads for MPS; it can cause instability on some macOS versions
     else:
         dev = torch.device("cpu")
         n = os.cpu_count()
         torch.set_num_threads(n)
         print(f"[Device] CPU — {n} threads")
 
+    _DEVICE_CACHE["auto"] = dev
     return dev

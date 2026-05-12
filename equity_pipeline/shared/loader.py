@@ -38,7 +38,10 @@ def load_data(
     """
     path = Path(data_path)
     print(f"[Loader] Reading {path} ...")
-    df = pd.read_parquet(path)
+    if path.suffix.lower() == ".parquet":
+        df = pd.read_parquet(path)
+    else:
+        df = pd.read_csv(path)
 
     if df.empty:
         raise ValueError(f"[Loader] The loaded DataFrame is empty (from {data_path}).")

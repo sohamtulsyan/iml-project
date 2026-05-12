@@ -17,6 +17,7 @@ from .metrics import spearman_ic, compute_ic_series, print_results_table
 from .output  import (save_test_predictions, save_oof_predictions,
                        save_ic_series, save_summary, save_feature_importance,
                        save_best_hparams)
+from .sequences import build_sequences
 
 
 class BaseModel(ABC):
@@ -96,6 +97,33 @@ def run_walk_forward(
         X_val = df_val_proc[feat_list].values
         y_val = df_val_proc["fwd_return"].values
 
+        # Sequence conversion if needed
+        if model.uses_sequences:
+            seq_len = getattr(cfg, "seq_len", 24)
+            # Train sequences
+            X_tr, y_tr, _, _ = build_sequences(df_tr_proc, id_col, date_col, feat_list, "fwd_return", seq_len)
+            
+            # Val sequences (need prior history from tr to fill the seq_len window for early val months)
+            # We can just use the full df_train_proc and filter for val_months
+            df_train_proc = pp.transform(df_train)
+            X_val, y_val, _, _ = build_sequences(df_train_proc, id_col, date_col, feat_list, "fwd_return", seq_len, 
+                                                 pred_months=val_months_)
+            
+            # Test sequences (need history from training window)
+            recent_hist = df_train_proc[df_train_proc[date_col].isin(train_months[-seq_len:])]
+            df_te_proc = pp.transform(df_test)
+            X_te, y_te, ids_te, _ = build_sequences(
+                pd.concat([recent_hist, df_te_proc], ignore_index=True),
+                id_col, date_col, feat_list, "fwd_return", seq_len,
+                pred_months=[test_month]
+            )
+        else:
+            # Test data (already transformed above for sequence models)
+            df_te_proc = pp.transform(df_test)
+            X_te = df_te_proc[feat_list].values
+            y_te = df_te_proc["fwd_return"].values
+            ids_te = df_te_proc[id_col].values
+
         # Hyperparameter Tuning (Optional: Only on first fold)
         if fold_idx == 0 and tune_first_fold:
             print(f"  [{model.name}] Tuning hyperparameters on first fold...")
@@ -104,17 +132,13 @@ def run_walk_forward(
                 print(f"  [{model.name}] Best params: {best_params}")
                 save_best_hparams(best_params, model.name, output_dir)
 
-        # Test data
-        df_te_proc = pp.transform(df_test)
-        X_te = df_te_proc[feat_list].values
-        y_te = df_te_proc["fwd_return"].values
-        ids_te = df_te_proc[id_col].values
         t_pre = time.time() - t_pre_start
 
         if len(X_tr) < cfg.min_obs or len(X_te) < 5:
             continue
 
         t_train_start = time.time()
+        print(f"  [{model.name}] calling fit...")
         model.fit(X_tr, y_tr, X_val, y_val)
         t_train = time.time() - t_train_start
         
@@ -122,14 +146,29 @@ def run_walk_forward(
         test_ic = spearman_ic(y_te, preds)
         
         if compute_oof:
-            df_train_proc = pp.transform(df_train)
-            oof_preds = model.predict(df_train_proc[feat_list].values)
-            all_oof.append(pd.DataFrame({
-                id_col: df_train_proc[id_col],
-                date_col: df_train_proc[date_col],
-                "pred_score": oof_preds,
-                "fwd_return": df_train_proc["fwd_return"]
-            }))
+            if model.uses_sequences:
+                seq_len = getattr(cfg, "seq_len", 24)
+                # If df_train_proc wasn't already created in the sequence block above
+                if 'df_train_proc' not in locals():
+                    df_train_proc = pp.transform(df_train)
+                X_oof, y_oof, ids_oof, m_oof = build_sequences(df_train_proc, id_col, date_col, feat_list, "fwd_return", seq_len)
+                if len(X_oof) > 0:
+                    oof_preds = model.predict(X_oof)
+                    all_oof.append(pd.DataFrame({
+                        id_col: ids_oof,
+                        date_col: m_oof,
+                        "pred_score": oof_preds,
+                        "fwd_return": y_oof
+                    }))
+            else:
+                df_train_proc = pp.transform(df_train)
+                oof_preds = model.predict(df_train_proc[feat_list].values)
+                all_oof.append(pd.DataFrame({
+                    id_col: df_train_proc[id_col],
+                    date_col: df_train_proc[date_col],
+                    "pred_score": oof_preds,
+                    "fwd_return": df_train_proc["fwd_return"]
+                }))
 
         ic_series.append({"Month": test_month, "IC": test_ic})
         all_preds.append(pd.DataFrame({

@@ -104,15 +104,22 @@ class CNNModel(BaseModel):
         self.weight_decay = weight_decay
         self.seed         = seed
         self._model       = None
-        self._device      = None
+        self._device      = get_device(self.device_str)
 
     def fit(self, X_train, y_train, X_val, y_val) -> None:
+        print(f"  [{self.name}] fit: starting (device={self._device})")
         torch.manual_seed(self.seed)
-        self._device = get_device(self.device_str)
+        if self._device.type == "mps":
+            print(f"  [{self.name}] fit: clearing mps cache")
+            torch.mps.empty_cache()
+            torch.mps.synchronize()
+
         n_feat = X_train.shape[2]
+        print(f"  [{self.name}] fit: building net (n_feat={n_feat})")
         net = _TemporalCNN(n_feat, self.n_filters,
                            self.kernel_sizes, self.n_conv_blocks,
                            self.dropout).to(self._device)
+        print(f"  [{self.name}] fit: net built and moved")
 
         use_amp = (self._device.type == "cuda")
         if use_amp:
@@ -126,6 +133,7 @@ class CNNModel(BaseModel):
         criterion = nn.MSELoss()
         pin = (self._device.type == "cuda")
 
+        print(f"  [{self.name}] fit: creating dataloader")
         loader = DataLoader(
             TensorDataset(
                 torch.from_numpy(X_train).float(),
@@ -134,6 +142,8 @@ class CNNModel(BaseModel):
             batch_size=self.batch_size, shuffle=True,
             pin_memory=pin, num_workers=0,
         )
+        print(f"  [{self.name}] fit: dataloader created")
+
         # Move to device lazily or carefully
         X_val_t = torch.from_numpy(X_val).float()
         if self._device.type == "cuda":
@@ -145,8 +155,9 @@ class CNNModel(BaseModel):
         for epoch in range(self.max_epochs):
             net.train()
             for Xb, yb in loader:
-                Xb = Xb.to(self._device, non_blocking=True)
-                yb = yb.to(self._device, non_blocking=True)
+                is_mps = (self._device.type == "mps")
+                Xb = Xb.to(self._device, non_blocking=not is_mps)
+                yb = yb.to(self._device, non_blocking=not is_mps)
                 yb = ((yb - yb.mean()) / yb.std().clamp(min=1e-8)).unsqueeze(1)
                 optimizer.zero_grad(set_to_none=True)
                 if use_amp:

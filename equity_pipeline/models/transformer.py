@@ -97,7 +97,7 @@ class TransformerModel(BaseModel):
         self.weight_decay    = weight_decay
         self.seed            = seed
         self._model          = None
-        self._device         = None
+        self._device         = get_device(self.device_str)
 
     def _build_net(self, n_features, seq_len):
         return _TransformerNet(
@@ -110,7 +110,9 @@ class TransformerModel(BaseModel):
 
     def fit(self, X_train, y_train, X_val, y_val) -> None:
         torch.manual_seed(self.seed)
-        self._device = get_device(self.device_str)
+        if self._device.type == "mps":
+            torch.mps.empty_cache()
+
         n_feat, seq_len = X_train.shape[2], X_train.shape[1]
         net = self._build_net(n_feat, seq_len).to(self._device)
 
@@ -150,8 +152,9 @@ class TransformerModel(BaseModel):
         for epoch in range(self.max_epochs):
             net.train()
             for Xb, yb in loader:
-                Xb = Xb.to(self._device, non_blocking=True)
-                yb = yb.to(self._device, non_blocking=True)
+                is_mps = (self._device.type == "mps")
+                Xb = Xb.to(self._device, non_blocking=not is_mps)
+                yb = yb.to(self._device, non_blocking=not is_mps)
                 yb = ((yb - yb.mean()) / yb.std().clamp(min=1e-8)).unsqueeze(1)
                 optimizer.zero_grad(set_to_none=True)
                 if use_amp:
