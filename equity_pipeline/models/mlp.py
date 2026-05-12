@@ -125,7 +125,9 @@ class MLPModel(BaseModel):
             with torch.no_grad():
                 X_val_batch = X_val_t.to(self._device)
                 val_pred = net(X_val_batch).cpu().numpy().flatten()
-            val_ic = spearman_ic(y_val, val_pred)
+            # Normalize validation targets to match training scale for IC calculation
+            y_val_norm = (y_val - y_val.mean()) / y_val.std().clip(min=1e-8)
+            val_ic = spearman_ic(y_val_norm, val_pred)
 
             if val_ic > best_ic:
                 best_ic    = val_ic
