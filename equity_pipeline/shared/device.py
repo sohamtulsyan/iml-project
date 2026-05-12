@@ -23,12 +23,11 @@ def get_device(device: str = "auto") -> torch.device:
     elif torch.backends.mps.is_available():
         dev = torch.device("mps")
         print("[Device] Apple Silicon MPS")
-        torch.set_num_threads(os.cpu_count())
+        # Do NOT set_num_threads for MPS; it can cause instability on some macOS versions
     else:
         dev = torch.device("cpu")
         n = os.cpu_count()
         torch.set_num_threads(n)
-        torch.set_num_interop_threads(max(1, n // 2))
         print(f"[Device] CPU — {n} threads")
 
     return dev

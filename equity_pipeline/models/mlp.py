@@ -87,7 +87,11 @@ class MLPModel(BaseModel):
             batch_size=self.batch_size, shuffle=True,
             pin_memory=pin, num_workers=0,
         )
-        X_val_t  = torch.from_numpy(X_val).float().to(self._device)
+        # Move to device lazily or carefully
+        X_val_t = torch.from_numpy(X_val).float()
+        if self._device.type == "cuda":
+            X_val_t = X_val_t.to(self._device)
+        # For MPS, we'll move it in the eval loop to avoid upfront memory spikes
 
         best_ic, best_state, patience_count = -np.inf, None, 0
 
@@ -116,7 +120,8 @@ class MLPModel(BaseModel):
 
             net.eval()
             with torch.no_grad():
-                val_pred = net(X_val_t).cpu().numpy().flatten()
+                X_val_batch = X_val_t.to(self._device)
+                val_pred = net(X_val_batch).cpu().numpy().flatten()
             val_ic = spearman_ic(y_val, val_pred)
 
             if val_ic > best_ic:
