@@ -91,7 +91,7 @@ def load_data_from_supabase(table_name: str) -> pd.DataFrame:
     # Supabase has a limit on the number of rows per request (default 1000).
     # We need to paginate to fetch 572k rows.
     all_data = []
-    page_size = 10000
+    page_size = 1000
     offset = 0
     
     while True:

@@ -1,2 +1,4 @@
 Model,Mean IC,ICIR,Sharpe,MaxDD,Ann.Ret,Ann.Vol
-lightgbm,+0.0515,+0.6174,—,—,—,—
+mlp,+nan,+0.0000,—,—,—,—
+cnn,+nan,+0.0000,—,—,—,—
+transformer,+nan,+0.0000,—,—,—,—
