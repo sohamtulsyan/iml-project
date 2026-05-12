@@ -127,12 +127,6 @@ class TransformerModel(BaseModel):
         optimizer = optim.AdamW(net.parameters(), lr=self.lr,
                                 weight_decay=self.weight_decay)
         
-        # OneCycleLR for fast convergence in 15 epochs
-        scheduler = optim.lr_scheduler.OneCycleLR(
-            optimizer, max_lr=self.lr,
-            epochs=self.max_epochs, steps_per_epoch=len(loader),
-            pct_start=0.3, div_factor=10, final_div_factor=100
-        )
         criterion = nn.MSELoss()
         pin = (self._device.type == "cuda")
 
@@ -143,6 +137,13 @@ class TransformerModel(BaseModel):
             ),
             batch_size=self.batch_size, shuffle=True,
             pin_memory=pin, num_workers=0,
+        )
+
+        # OneCycleLR for fast convergence in 15 epochs
+        scheduler = optim.lr_scheduler.OneCycleLR(
+            optimizer, max_lr=self.lr,
+            epochs=self.max_epochs, steps_per_epoch=len(loader),
+            pct_start=0.3, div_factor=10, final_div_factor=100
         )
         # Move to device lazily or carefully
         X_val_t = torch.from_numpy(X_val).float()

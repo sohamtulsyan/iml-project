@@ -133,12 +133,6 @@ class CNNModel(BaseModel):
         optimizer = optim.AdamW(net.parameters(), lr=self.lr,
                                 weight_decay=self.weight_decay)
         
-        # OneCycleLR is perfect for "super-convergence" in very few epochs
-        scheduler = optim.lr_scheduler.OneCycleLR(
-            optimizer, max_lr=self.lr,
-            epochs=self.max_epochs, steps_per_epoch=len(loader),
-            pct_start=0.3, div_factor=10, final_div_factor=100
-        )
         criterion = nn.MSELoss()
         pin = (self._device.type == "cuda")
 
@@ -152,6 +146,13 @@ class CNNModel(BaseModel):
             pin_memory=pin, num_workers=0,
         )
         print(f"  [{self.name}] fit: dataloader created")
+
+        # OneCycleLR is perfect for "super-convergence" in very few epochs
+        scheduler = optim.lr_scheduler.OneCycleLR(
+            optimizer, max_lr=self.lr,
+            epochs=self.max_epochs, steps_per_epoch=len(loader),
+            pct_start=0.3, div_factor=10, final_div_factor=100
+        )
 
         # Move to device lazily or carefully
         X_val_t = torch.from_numpy(X_val).float()
