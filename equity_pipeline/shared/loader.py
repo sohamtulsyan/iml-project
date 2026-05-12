@@ -11,6 +11,7 @@ import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from tqdm import tqdm
 from supabase import create_client, Client
 
 # Canonical column aliases → rename on load
@@ -85,29 +86,54 @@ def load_data_from_supabase(table_name: str) -> pd.DataFrame:
     if not url or not key:
         raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY environment variables.")
 
+    # Local cache check
+    cache_dir = Path(".cache")
+    cache_dir.mkdir(exist_ok=True)
+    cache_file = cache_dir / f"{table_name}.parquet"
+
+    if cache_file.exists():
+        print(f"[Loader] Loading from local cache: {cache_file} ...")
+        return pd.read_parquet(cache_file)
+
     print(f"[Loader] Fetching from Supabase table: {table_name} ...")
     supabase: Client = create_client(url, key)
     
-    # Supabase has a limit on the number of rows per request (default 1000).
-    # We need to paginate to fetch 572k rows.
-    all_data = []
+    # Supabase limit is 1000 rows per request
     page_size = 1000
-    offset = 0
     
-    while True:
-        response = supabase.table(table_name).select("*").range(offset, offset + page_size - 1).execute()
-        data = response.data
-        if not data:
-            break
-        all_data.extend(data)
-        if len(data) < page_size:
-            break
-        offset += page_size
-    if not all_data:
+    # 1. Get total count
+    count_res = supabase.table(table_name).select("*", count="exact").limit(0).execute()
+    total_count = count_res.count
+    if total_count == 0:
         print(f"[Loader] Warning: No data found in Supabase table: {table_name}")
         return pd.DataFrame()
 
-    return pd.DataFrame(all_data)
+    print(f"[Loader] Parallel fetching {total_count:,} rows ...")
+
+    # 2. Define page fetcher
+    def fetch_page(start_offset: int):
+        end_offset = start_offset + page_size - 1
+        res = supabase.table(table_name).select("*").range(start_offset, end_offset).execute()
+        return res.data
+
+    # 3. Fetch in parallel
+    from concurrent.futures import ThreadPoolExecutor
+    offsets = list(range(0, total_count, page_size))
+    all_data = []
+    
+    max_workers = 16  # Significant speedup
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = list(tqdm(executor.map(fetch_page, offsets), total=len(offsets), desc="  Downloading"))
+        for batch in results:
+            all_data.extend(batch)
+
+    df = pd.DataFrame(all_data)
+    
+    # Save to cache
+    print(f"[Loader] Saving to cache: {cache_file} ...")
+    df.to_parquet(cache_file, index=False)
+
+    return df
 
 
 def build_target(
