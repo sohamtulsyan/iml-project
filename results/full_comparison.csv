@@ -1,5 +1,2 @@
 Model,Mean IC,ICIR,Sharpe,MaxDD,Ann.Ret,Ann.Vol
-ridge,+0.0315,+0.2989,—,—,—,—
-cart,+0.0367,+0.4611,—,—,—,—
-lightgbm,+0.0520,+0.6004,—,—,—,—
-random_forest,+0.0486,+0.5333,—,—,—,—
+lightgbm,+0.0515,+0.6174,—,—,—,—

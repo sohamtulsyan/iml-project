@@ -7,9 +7,11 @@ before the walk-forward loop.
 """
 from __future__ import annotations
 
+import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from supabase import create_client, Client
 
 # Canonical column aliases → rename on load
 COLUMN_ALIASES = {
@@ -35,22 +37,20 @@ def load_data(
     features:   tuple = ("BM_sep", "OpProf", "Inv", "Momentum", "lag_ret", "mktcap"),
 ) -> pd.DataFrame:
     """
-    Load raw CSV and return a clean panel DataFrame ready for the pipeline.
-
-    Steps:
-      1. Load, rename aliases, drop excluded cols
-      2. Parse dates, sort (id, date)
-      3. Verify all required columns exist
-
-    Note: fwd_return construction and feature lagging are done separately
-    (via build_target and lag_features) to keep this function pure.
+    Load raw data (from CSV or Supabase) and return a clean panel DataFrame.
     """
-    path = Path(data_path)
-    if not path.exists():
-        raise FileNotFoundError(f"Data file not found: {path.resolve()}")
+    if str(data_path).startswith("supabase://"):
+        table_name = str(data_path).replace("supabase://", "")
+        df = load_data_from_supabase(table_name)
+    else:
+        path = Path(data_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Data file not found: {path.resolve()}")
+        print(f"[Loader] Reading {path} ...")
+        df = pd.read_csv(path)
 
-    print(f"[Loader] Reading {path} ...")
-    df = pd.read_csv(path, parse_dates=[date_col])
+    # Convert date_col to datetime
+    df[date_col] = pd.to_datetime(df[date_col])
 
     # Canonicalize column names
     df = df.rename(columns=COLUMN_ALIASES)
@@ -72,6 +72,40 @@ def load_data(
           f"{df[date_col].nunique():,} months | "
           f"{df[date_col].min().date()} → {df[date_col].max().date()}")
     return df
+
+
+def load_data_from_supabase(table_name: str) -> pd.DataFrame:
+    """
+    Fetch all data from a Supabase table.
+    Requires SUPABASE_URL and SUPABASE_KEY env variables.
+    """
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY")
+    if not url or not key:
+        raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY environment variables.")
+
+    print(f"[Loader] Fetching from Supabase table: {table_name} ...")
+    supabase: Client = create_client(url, key)
+    
+    # Supabase has a limit on the number of rows per request (default 1000).
+    # We need to paginate to fetch 572k rows.
+    all_data = []
+    page_size = 10000
+    offset = 0
+    
+    while True:
+        response = supabase.table(table_name).select("*").range(offset, offset + page_size - 1).execute()
+        data = response.data
+        if not data:
+            break
+        all_data.extend(data)
+        if len(data) < page_size:
+            break
+        offset += page_size
+        if offset % 50000 == 0:
+            print(f"  ... fetched {offset:,} rows")
+
+    return pd.DataFrame(all_data)
 
 
 def build_target(
