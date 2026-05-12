@@ -44,10 +44,11 @@ def load_data(
         df = load_data_from_supabase(table_name)
     else:
         path = Path(data_path)
-        if not path.exists():
-            raise FileNotFoundError(f"Data file not found: {path.resolve()}")
         print(f"[Loader] Reading {path} ...")
         df = pd.read_csv(path)
+
+    if df.empty:
+        raise ValueError(f"[Loader] The loaded DataFrame is empty (from {data_path}).")
 
     # Convert date_col to datetime
     df[date_col] = pd.to_datetime(df[date_col])
@@ -102,8 +103,9 @@ def load_data_from_supabase(table_name: str) -> pd.DataFrame:
         if len(data) < page_size:
             break
         offset += page_size
-        if offset % 50000 == 0:
-            print(f"  ... fetched {offset:,} rows")
+    if not all_data:
+        print(f"[Loader] Warning: No data found in Supabase table: {table_name}")
+        return pd.DataFrame()
 
     return pd.DataFrame(all_data)
 
