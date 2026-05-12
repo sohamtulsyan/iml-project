@@ -126,8 +126,12 @@ class TransformerModel(BaseModel):
 
         optimizer = optim.AdamW(net.parameters(), lr=self.lr,
                                 weight_decay=self.weight_decay)
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=self.max_epochs, eta_min=self.lr * 0.01
+        
+        # OneCycleLR for fast convergence in 15 epochs
+        scheduler = optim.lr_scheduler.OneCycleLR(
+            optimizer, max_lr=self.lr,
+            epochs=self.max_epochs, steps_per_epoch=len(loader),
+            pct_start=0.3, div_factor=10, final_div_factor=100
         )
         criterion = nn.MSELoss()
         pin = (self._device.type == "cuda")
@@ -168,8 +172,8 @@ class TransformerModel(BaseModel):
                     loss.backward()
                     nn.utils.clip_grad_norm_(net.parameters(), self.grad_clip)
                     optimizer.step()
-            scheduler.step()
-
+                scheduler.step()
+            
             net.eval()
             with torch.no_grad():
                 X_val_batch = X_val_t.to(self._device)

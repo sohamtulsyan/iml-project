@@ -54,8 +54,13 @@ class _TemporalCNN(nn.Module):
             for k in kernel_sizes
         ])
         self.head = nn.Sequential(
-            nn.Linear(6 * n_filters, 64), nn.GELU(), nn.Dropout(dropout),
-            nn.Linear(64, 1),
+            nn.Linear(6 * n_filters, 128),
+            nn.BatchNorm1d(128),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(128, 64),
+            nn.GELU(),
+            nn.Linear(64, 1)
         )
         for m in self.modules():
             if isinstance(m, nn.Conv1d):
@@ -127,8 +132,12 @@ class CNNModel(BaseModel):
 
         optimizer = optim.AdamW(net.parameters(), lr=self.lr,
                                 weight_decay=self.weight_decay)
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=self.max_epochs, eta_min=self.lr * 0.01
+        
+        # OneCycleLR is perfect for "super-convergence" in very few epochs
+        scheduler = optim.lr_scheduler.OneCycleLR(
+            optimizer, max_lr=self.lr,
+            epochs=self.max_epochs, steps_per_epoch=len(loader),
+            pct_start=0.3, div_factor=10, final_div_factor=100
         )
         criterion = nn.MSELoss()
         pin = (self._device.type == "cuda")
@@ -172,8 +181,8 @@ class CNNModel(BaseModel):
                     loss.backward()
                     nn.utils.clip_grad_norm_(net.parameters(), self.grad_clip)
                     optimizer.step()
-            scheduler.step()
-
+                scheduler.step()
+            
             net.eval()
             with torch.no_grad():
                 X_val_batch = X_val_t.to(self._device)

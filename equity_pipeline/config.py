@@ -39,9 +39,9 @@ class PipelineConfig:
 
     # ── Training (neural models) ──────────────────────────────────────────────
     max_epochs:           int   = 15
-    early_stop_patience:  int   = 10
+    early_stop_patience:  int   = 5
     batch_size:           int   = 512
-    lr:                   float = 3e-4
+    lr:                   float = 1e-3
     grad_clip:            float = 1.0
     weight_decay:         float = 1e-4
 
