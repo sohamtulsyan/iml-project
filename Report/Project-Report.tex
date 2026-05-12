@@ -296,10 +296,25 @@ As mentioned before, the 2nd Layer consists of a tri-modular structure, each mod
 \subsubsection{Tree Module}
 This module serves as the sort of a baseline for non-linear models. The module consists of 2 models: \textbf{CART} (specifically, Regression Trees) and \textbf{LightGBM}. 
 \begin{itemize}
-    \item \textbf{CART (Classification and Regression Trees): } 
-    As a baseline for non-linear models, we implement a Regression Tree to capture simple non-linear interactions and threshold effects in the factor data.
+    \item \textbf{CART (Classification and Regression Trees)}: 
+    As a baseline for non-linear models, we implement a Regression Tree to capture simple non-linear interactions and threshold effects. The model follows a recursive binary partitioning process. At each node, the optimal feature $j$ and splitting threshold $\tau$ are identified by minimizing the weighted Mean Squared Error (MSE):
+    \[
+    \underset{j, \tau}{\arg\min} \left[ \frac{|R_L|}{n} \text{MSE}(R_L) + \frac{|R_R|}{n} \text{MSE}(R_R) \right]
+    \]
+    where $R_L = \{x : x_j \leq \tau\}$ and $R_R = \{x : x_j > \tau\}$. For a given terminal leaf node $R_m$, the predicted return $\hat{y}$ is the mean of all training observations within that partition:
+    \[
+    \hat{y} = \frac{1}{|R_m|} \sum_{i \in R_m} y_i
+    \]
+
+    To prevent overfitting and ensure generalization, we utilize \textbf{Cost-Complexity Pruning}, which selects the subtree $T_\alpha$ that minimizes the penalized objective:
+    \[
+    C_\alpha(T) = \sum_{m=1}^{|T|} \text{MSE}(R_m) + \alpha \cdot |T|
+    \]
+    where $|T|$ represents the number of terminal nodes and $\alpha$ is a complexity parameter that penalizes larger trees. Finally, we assess factor relevance using \textbf{Mean Decrease in Impurity (MDI)}:
+    \[
+    \text{Importance}(j) = \sum_{\text{nodes } t \text{ split on } j} \frac{n_t}{n} \left[ \text{MSE}(t) - \frac{n_L}{n_t}\text{MSE}(t_L) - \frac{n_R}{n_t}\text{MSE}(t_R) \right]
+    \]
     \begin{itemize}
-        \item \textbf{Structure}: The model recursively partitions the feature space into hyper-rectangles by minimizing the Mean Squared Error (MSE) at each split. This allows it to model conditional relationships (e.g., Value performing differently for small-cap vs. large-cap firms) without requiring explicit variable interaction terms.
         \item \textbf{Feature Set}: Identical to the Ridge baseline, incorporating \texttt{BM\_sep}, \texttt{OpProf}, \texttt{Inv}, \texttt{Momentum}, \texttt{lag\_ret}, and \texttt{mktcap}.
         \item \textbf{Regularization and Tuning}: To prevent overfitting, we tune key tree hyperparameters, including the maximum depth (\texttt{max\_depth} $\in \{3, 5, 10\}$) and the minimum number of observations per leaf (\texttt{min\_samples\_leaf} $\in \{5, 10, \dots, 50, 100\}$).  Hyperparameter selection is performed using a grid search over the specified parameter space. Each candidate configuration is evaluated using a rolling one-step-ahead validation scheme, where the model is trained on data from month $t$ and tested on month $t+1$. Model performance is assessed using the Information Coefficient (IC), and the configuration with the highest risk-adjusted performance (ICIR) is selected.
         \item \textbf{Implementation Note}: Our current implementation utilizes a \textbf{one-month walk-forward validation} (training on month $t$ to predict $t+1$). While this ensures perfect temporal integrity, the single-month training sample may be sensitive to idiosyncratic noise and market volatility. We acknowledge this as a limitation and plan to expand the training window to a larger rolling format in subsequent research iterations to more effectively capture long-term factor distributions.

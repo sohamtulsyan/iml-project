@@ -1,0 +1,96 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Motivation}{1}{subsection.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.1}The Efficient Market Hypothesis}{1}{subsubsection.1.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.2}Factor Investing}{2}{subsubsection.1.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Objective}{2}{subsection.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Hypothesis}{2}{subsection.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4}Goals}{2}{subsection.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Methodology}{3}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Checklist}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Problem Setup}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Data Description}{3}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}Dataset Schema}{4}{subsubsection.2.3.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Summary of dataset variables and their economic interpretation}}{4}{table.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Data Preprocessing}{4}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.1}Data Ordering}{4}{subsubsection.2.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.2}Forward Return Construction}{4}{subsubsection.2.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.3}Feature Selection}{4}{subsubsection.2.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.4}Null Handling}{5}{subsubsection.2.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.5}Outlier Treatment via Winsorization}{5}{subsubsection.2.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.6}Cross-Sectional Normalization}{6}{subsubsection.2.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.7}Final Dataset Construction}{6}{subsubsection.2.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Pipeline}{7}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Pipeline Diagram}{7}{subsection.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces A Rough Pipeline Diagram to illustrate our structure}}{7}{figure.1}\protected@file@percent }
+\newlabel{fig:pipeline}{{1}{7}{A Rough Pipeline Diagram to illustrate our structure}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Layer 1: Linear Baseline}{8}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}Ridge Regression}{8}{subsubsection.3.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Layer 2: Non-Linear Layer}{8}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.1}Tree Module}{8}{subsubsection.3.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.2}Random Forest Module}{10}{subsubsection.3.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.3}Neural Network Module}{10}{subsubsection.3.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Layer 3: The Ensemble Layer}{11}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.4.1}Stacked Generalization}{11}{subsubsection.3.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.4.2}Full Training and Inference Flow}{11}{subsubsection.3.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Evaluation}{12}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.1}Information Coefficient (IC)}{12}{subsubsection.4.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Interpretation}{12}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.2}Information Coefficient Information Ratio (ICIR)}{13}{subsubsection.4.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Interpretation}{13}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.3}Why Not RMSE or $R^2$?}{13}{subsubsection.4.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.4}Walk-Forward Evaluation Procedure}{13}{subsubsection.4.0.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.5}Economic Evaluation via Portfolio Construction}{14}{subsubsection.4.0.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Portfolio Formation}{14}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Performance Metrics}{14}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Interpretation}{14}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.0.6}Summary}{14}{subsubsection.4.0.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Evaluation}{14}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Benchmarks}{14}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.1}Statistical Thresholds (IC and ICIR)}{15}{subsubsection.5.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Standard interpretation of the IC Information Ratio (ICIR).}}{15}{table.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.1.2}Economic Threshold (Sharpe Ratio)}{15}{subsubsection.5.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Results}{15}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Ridge Regression Baseline Results}{15}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.1.1}Overall Performance}{15}{subsubsection.6.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Summary of Ridge Regression predictive performance (Spearman IC).}}{15}{table.3}\protected@file@percent }
+\newlabel{tab:ridge_ic_results}{{3}{15}{Summary of Ridge Regression predictive performance (Spearman IC)}{table.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.1.2}Factor Significance and Coefficient Stability}{16}{subsubsection.6.1.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Average standardized coefficients and significance across the rolling window.}}{16}{table.4}\protected@file@percent }
+\newlabel{tab:ridge_coef_summary}{{4}{16}{Average standardized coefficients and significance across the rolling window}{table.4}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.1.3}Assumption Diagnostics}{16}{subsubsection.6.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Regression Tree Baseline Results}{16}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.2.1}Overall Performance}{16}{subsubsection.6.2.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Summary of Regression Tree (CART) predictive performance.}}{17}{table.5}\protected@file@percent }
+\newlabel{tab:cart_results}{{5}{17}{Summary of Regression Tree (CART) predictive performance}{table.5}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.2.2}Feature Importance}{17}{subsubsection.6.2.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Feature importance scores for the best-performing Regression Tree.}}{17}{table.6}\protected@file@percent }
+\newlabel{tab:cart_importance}{{6}{17}{Feature importance scores for the best-performing Regression Tree}{table.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}LightGBM Results}{17}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.3.1}Overall Performance}{17}{subsubsection.6.3.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Summary of LightGBM predictive performance.}}{18}{table.7}\protected@file@percent }
+\newlabel{tab:lgbm_results}{{7}{18}{Summary of LightGBM predictive performance}{table.7}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.3.2}Hyperparameter Optimization}{18}{subsubsection.6.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.3.3}Feature Importance and Insights}{18}{subsubsection.6.3.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces LightGBM feature importance rankings (averaged across walk-forward folds).}}{18}{table.8}\protected@file@percent }
+\newlabel{tab:lgbm_importance}{{8}{18}{LightGBM feature importance rankings (averaged across walk-forward folds)}{table.8}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.3.4}Diagnostics}{19}{subsubsection.6.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Random Forest Results}{19}{subsection.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.4.1}Overall Performance}{19}{subsubsection.6.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Summary of Random Forest predictive performance.}}{19}{table.9}\protected@file@percent }
+\newlabel{tab:rf_results}{{9}{19}{Summary of Random Forest predictive performance}{table.9}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.4.2}Hyperparameter Optimization}{19}{subsubsection.6.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.4.3}Feature Importance}{19}{subsubsection.6.4.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Random Forest feature importance rankings.}}{20}{table.10}\protected@file@percent }
+\newlabel{tab:rf_importance}{{10}{20}{Random Forest feature importance rankings}{table.10}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.4.4}Diagnostics}{20}{subsubsection.6.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{20}{section.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Hypothesis Validation}{20}{subsection.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Key Findings}{20}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Limitations}{21}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Future Work}{21}{subsection.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Codebase}{21}{section.8}\protected@file@percent }
+\gdef \@abspage@last{21}
