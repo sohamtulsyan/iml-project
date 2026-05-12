@@ -7,12 +7,8 @@ before the walk-forward loop.
 """
 from __future__ import annotations
 
-import os
-import numpy as np
 import pandas as pd
 from pathlib import Path
-from tqdm import tqdm
-from supabase import create_client, Client
 
 # Canonical column aliases → rename on load
 COLUMN_ALIASES = {
@@ -38,15 +34,11 @@ def load_data(
     features:   tuple = ("BM_sep", "OpProf", "Inv", "Momentum", "lag_ret", "mktcap"),
 ) -> pd.DataFrame:
     """
-    Load raw data (from CSV or Supabase) and return a clean panel DataFrame.
+    Load raw data from Parquet and return a clean panel DataFrame.
     """
-    if str(data_path).startswith("supabase://"):
-        table_name = str(data_path).replace("supabase://", "")
-        df = load_data_from_supabase(table_name)
-    else:
-        path = Path(data_path)
-        print(f"[Loader] Reading {path} ...")
-        df = pd.read_csv(path)
+    path = Path(data_path)
+    print(f"[Loader] Reading {path} ...")
+    df = pd.read_parquet(path)
 
     if df.empty:
         raise ValueError(f"[Loader] The loaded DataFrame is empty (from {data_path}).")
@@ -73,66 +65,6 @@ def load_data(
           f"{df[id_col].nunique():,} firms | "
           f"{df[date_col].nunique():,} months | "
           f"{df[date_col].min().date()} → {df[date_col].max().date()}")
-    return df
-
-
-def load_data_from_supabase(table_name: str) -> pd.DataFrame:
-    """
-    Fetch all data from a Supabase table.
-    Requires SUPABASE_URL and SUPABASE_KEY env variables.
-    """
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
-    if not url or not key:
-        raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY environment variables.")
-
-    # Local cache check
-    cache_dir = Path(".cache")
-    cache_dir.mkdir(exist_ok=True)
-    cache_file = cache_dir / f"{table_name}.parquet"
-
-    if cache_file.exists():
-        print(f"[Loader] Loading from local cache: {cache_file} ...")
-        return pd.read_parquet(cache_file)
-
-    print(f"[Loader] Fetching from Supabase table: {table_name} ...")
-    supabase: Client = create_client(url, key)
-    
-    # Supabase limit is 1000 rows per request
-    page_size = 1000
-    
-    # 1. Get total count
-    count_res = supabase.table(table_name).select("*", count="exact").limit(0).execute()
-    total_count = count_res.count
-    if total_count == 0:
-        print(f"[Loader] Warning: No data found in Supabase table: {table_name}")
-        return pd.DataFrame()
-
-    print(f"[Loader] Parallel fetching {total_count:,} rows ...")
-
-    # 2. Define page fetcher
-    def fetch_page(start_offset: int):
-        end_offset = start_offset + page_size - 1
-        res = supabase.table(table_name).select("*").range(start_offset, end_offset).execute()
-        return res.data
-
-    # 3. Fetch in parallel
-    from concurrent.futures import ThreadPoolExecutor
-    offsets = list(range(0, total_count, page_size))
-    all_data = []
-    
-    max_workers = 16  # Significant speedup
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        results = list(tqdm(executor.map(fetch_page, offsets), total=len(offsets), desc="  Downloading"))
-        for batch in results:
-            all_data.extend(batch)
-
-    df = pd.DataFrame(all_data)
-    
-    # Save to cache
-    print(f"[Loader] Saving to cache: {cache_file} ...")
-    df.to_parquet(cache_file, index=False)
-
     return df
 
 

@@ -53,34 +53,47 @@ from equity_pipeline.shared.metrics import print_full_comparison
 from equity_pipeline.shared.output import load_summary
 
 
-def _make_all_models(cfg):
-    """Instantiate all 7 models. Lazy imports keep CLI --help fast."""
-    from equity_pipeline.models.ridge       import RidgeModel
-    from equity_pipeline.models.cart        import CARTModel
-    from equity_pipeline.models.lightgbm_model import LightGBMModel
-    from equity_pipeline.models.random_forest  import RandomForestModel
-    from equity_pipeline.models.mlp        import MLPModel
-    from equity_pipeline.models.transformer import TransformerModel
-    from equity_pipeline.models.cnn        import CNNModel
-
-    return {
-        "ridge":         (RidgeModel(),         make_linear_preprocessor),
-        "cart":          (CARTModel(),           make_tree_preprocessor),
-        "lightgbm":      (LightGBMModel(seed=cfg.seed), make_tree_preprocessor),
-        "random_forest": (RandomForestModel(seed=cfg.seed), make_tree_preprocessor),
-        # ... others use sequence preprocessor for now
-        "mlp":           (MLPModel(device_str=cfg.device, seed=cfg.seed, max_epochs=cfg.max_epochs,
-                                   batch_size=cfg.batch_size, lr=cfg.lr),
-                          make_sequence_preprocessor),
-        "transformer":   (TransformerModel(device_str=cfg.device, seed=cfg.seed,
-                                            max_epochs=cfg.max_epochs,
-                                            batch_size=cfg.batch_size, lr=cfg.lr),
-                          make_sequence_preprocessor),
-        "cnn":           (CNNModel(device_str=cfg.device, seed=cfg.seed,
-                                   max_epochs=cfg.max_epochs,
-                                   batch_size=cfg.batch_size, lr=cfg.lr),
-                          make_sequence_preprocessor),
-    }
+def _make_all_models(cfg, models_to_run):
+    """Instantiate selected models. Lazy imports keep CLI --help fast."""
+    models = {}
+    
+    if "ridge" in models_to_run:
+        from equity_pipeline.models.ridge import RidgeModel
+        models["ridge"] = (RidgeModel(), make_linear_preprocessor)
+    
+    if "cart" in models_to_run:
+        from equity_pipeline.models.cart import CARTModel
+        models["cart"] = (CARTModel(), make_tree_preprocessor)
+    
+    if "lightgbm" in models_to_run:
+        from equity_pipeline.models.lightgbm_model import LightGBMModel
+        models["lightgbm"] = (LightGBMModel(seed=cfg.seed), make_tree_preprocessor)
+    
+    if "random_forest" in models_to_run:
+        from equity_pipeline.models.random_forest import RandomForestModel
+        models["random_forest"] = (RandomForestModel(seed=cfg.seed), make_tree_preprocessor)
+    
+    if "mlp" in models_to_run:
+        from equity_pipeline.models.mlp import MLPModel
+        models["mlp"] = (MLPModel(device_str=cfg.device, seed=cfg.seed, max_epochs=cfg.max_epochs,
+                                  batch_size=cfg.batch_size, lr=cfg.lr),
+                         make_sequence_preprocessor)
+    
+    if "transformer" in models_to_run:
+        from equity_pipeline.models.transformer import TransformerModel
+        models["transformer"] = (TransformerModel(device_str=cfg.device, seed=cfg.seed,
+                                                   max_epochs=cfg.max_epochs,
+                                                   batch_size=cfg.batch_size, lr=cfg.lr),
+                                 make_sequence_preprocessor)
+    
+    if "cnn" in models_to_run:
+        from equity_pipeline.models.cnn import CNNModel
+        models["cnn"] = (CNNModel(device_str=cfg.device, seed=cfg.seed,
+                                  max_epochs=cfg.max_epochs,
+                                  batch_size=cfg.batch_size, lr=cfg.lr),
+                         make_sequence_preprocessor)
+    
+    return models
 
 
 def _parse_args():
@@ -160,7 +173,7 @@ def main():
     ic_summaries = {}
 
     if not args.ensemble_only:
-        all_models = _make_all_models(cfg)
+        all_models = _make_all_models(cfg, models_to_run)
 
         for model_name in models_to_run:
             model, preprocessor_factory = all_models[model_name]

@@ -1,7 +1,7 @@
 {
-  "mean_ic": NaN,
-  "ic_std": NaN,
-  "icir": 0.0,
-  "pct_positive": NaN,
-  "n_months": 0
+  "mean_ic": -0.002049,
+  "ic_std": 0.101972,
+  "icir": -0.020094,
+  "pct_positive": 49.11,
+  "n_months": 224
 }
