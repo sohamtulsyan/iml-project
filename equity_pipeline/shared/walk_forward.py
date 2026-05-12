@@ -143,6 +143,13 @@ def run_walk_forward(
 
     summary = compute_ic_series([r["IC"] for r in ic_series])
     print_results_table(summary, model.name, cfg.baselines)
+    if not ic_series:
+        print(f"\n[WalkForward] Warning: No folds were processed for {model.name}. Check your data and min_obs settings.")
+        return {
+            "mean_ic": np.nan, "ic_std": np.nan, "icir": 0.0,
+            "pct_positive": np.nan, "n_months": 0
+        }
+
     save_ic_series(ic_series, model.name, output_dir)
     save_summary(summary, model.name, output_dir)
     save_test_predictions(pd.concat(all_preds, ignore_index=True), model.name, output_dir)
