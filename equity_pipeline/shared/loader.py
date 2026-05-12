@@ -79,14 +79,18 @@ def load_data(
 def load_data_from_supabase(table_name: str) -> pd.DataFrame:
     """
     Fetch all data from a Supabase table.
-    Requires SUPABASE_URL and SUPABASE_KEY env variables.
+    
+    Strategy (fastest → slowest):
+      1. Local Parquet cache  (~0.5s)
+      2. Direct PostgreSQL    (~5s for 572k rows)
+      3. REST API fallback    (minutes — last resort)
+    
+    Env vars:
+      SUPABASE_URL          — e.g. https://xxx.supabase.co
+      SUPABASE_KEY          — publishable key (for REST fallback)
+      SUPABASE_DB_PASSWORD  — database password (for direct PG)
     """
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
-    if not url or not key:
-        raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY environment variables.")
-
-    # Local cache check
+    # ── Local cache (instant) ─────────────────────────────────────────────
     cache_dir = Path(".cache")
     cache_dir.mkdir(exist_ok=True)
     cache_file = cache_dir / f"{table_name}.parquet"
@@ -95,44 +99,77 @@ def load_data_from_supabase(table_name: str) -> pd.DataFrame:
         print(f"[Loader] Loading from local cache: {cache_file} ...")
         return pd.read_parquet(cache_file)
 
-    print(f"[Loader] Fetching from Supabase table: {table_name} ...")
+    # ── Try direct PostgreSQL (fastest) ─────────────────────────────────────
+    db_url = os.environ.get("SUPABASE_DB_URL", "")
+    url = os.environ.get("SUPABASE_URL", "")
+
+    if db_url:
+        print(f"[Loader] Direct PostgreSQL → {table_name} ...")
+        try:
+            import psycopg2
+            conn = psycopg2.connect(db_url, connect_timeout=10)
+            df = pd.read_sql(f'SELECT * FROM "{table_name}"', conn)
+            conn.close()
+            print(f"[Loader] Fetched {len(df):,} rows via PostgreSQL")
+
+            if "id" in df.columns:
+                df = df.drop(columns=["id"])
+
+            df.to_parquet(cache_file, index=False)
+            print(f"[Loader] Cached → {cache_file}")
+            return df
+        except Exception as e:
+            print(f"[Loader] PostgreSQL failed ({e}), falling back to REST API ...")
+
+    # ── REST API fallback (with retry) ─────────────────────────────────────
+    key = os.environ.get("SUPABASE_KEY", "")
+    if not url or not key:
+        raise ValueError("Set SUPABASE_URL + SUPABASE_DB_PASSWORD (fast) or SUPABASE_URL + SUPABASE_KEY (slow)")
+
+    print(f"[Loader] REST API → {table_name} ...")
+    import time as _time
     supabase: Client = create_client(url, key)
-    
-    # Supabase limit is 1000 rows per request
+
     page_size = 1000
-    
-    # 1. Get total count
-    count_res = supabase.table(table_name).select("*", count="exact").limit(0).execute()
-    total_count = count_res.count
-    if total_count == 0:
+    all_data = []
+    offset = 0
+    max_retries = 3
+
+    while True:
+        for attempt in range(max_retries):
+            try:
+                response = supabase.table(table_name).select("*").range(offset, offset + page_size - 1).execute()
+                data = response.data
+                break
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait = 2 ** (attempt + 1)
+                    print(f"  ⚠ Request failed at offset {offset:,}, retrying in {wait}s ... ({e})")
+                    _time.sleep(wait)
+                else:
+                    print(f"  ✗ Failed after {max_retries} retries at offset {offset:,}")
+                    raise
+
+        if not data:
+            break
+        all_data.extend(data)
+        if len(data) < page_size:
+            break
+        offset += page_size
+        if offset % 10000 == 0:
+            print(f"  ... {offset:,} / ~572k rows")
+
+    if not all_data:
         print(f"[Loader] Warning: No data found in Supabase table: {table_name}")
         return pd.DataFrame()
 
-    print(f"[Loader] Parallel fetching {total_count:,} rows ...")
-
-    # 2. Define page fetcher
-    def fetch_page(start_offset: int):
-        end_offset = start_offset + page_size - 1
-        res = supabase.table(table_name).select("*").range(start_offset, end_offset).execute()
-        return res.data
-
-    # 3. Fetch in parallel
-    from concurrent.futures import ThreadPoolExecutor
-    offsets = list(range(0, total_count, page_size))
-    all_data = []
-    
-    max_workers = 16  # Significant speedup
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        results = list(tqdm(executor.map(fetch_page, offsets), total=len(offsets), desc="  Downloading"))
-        for batch in results:
-            all_data.extend(batch)
-
+    print(f"[Loader] Fetched {len(all_data):,} rows via REST API")
     df = pd.DataFrame(all_data)
-    
-    # Save to cache
-    print(f"[Loader] Saving to cache: {cache_file} ...")
-    df.to_parquet(cache_file, index=False)
+    if "id" in df.columns:
+        df = df.drop(columns=["id"])
 
+    df.to_parquet(cache_file, index=False)
+    print(f"[Loader] Cached → {cache_file}")
     return df
 
 

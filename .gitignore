@@ -1,2 +1,5 @@
 venv/
+project_database.csv.cache/
 project_database.csv
+.cache/
+__pycache__/
