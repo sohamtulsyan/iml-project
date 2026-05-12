@@ -1,0 +1,13 @@
+{
+  "n_filters": 32,
+  "kernel_sizes": [
+    3,
+    6,
+    12
+  ],
+  "n_conv_blocks": 1,
+  "dropout": 0.1,
+  "lr": 0.0003,
+  "batch_size": 512,
+  "seq_len": 24
+}
