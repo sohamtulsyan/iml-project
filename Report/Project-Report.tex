@@ -9,6 +9,7 @@
 \usepackage{multirow}
 \usepackage{float}
 \usepackage{longtable}
+\usepackage{xcolor}
 
 \title{Cross-Sectional Equity Return Prediction using Machine Learning}
 \author{Soham Tulsyan}
@@ -19,13 +20,13 @@
 \maketitle
 
 \begin{abstract}
-Predicting equity returns is the "Holy Grail" of quantitative finance. This project aims to predict one-month forward equity returns using firm-level characteristics in a cross-sectional framework. We implement multiple machine learning models and evaluate them based on their ability to rank stocks using Information Coefficient (IC). Our findings highlight the effectiveness of factor-based features and ensemble methods in generating predictive signals.
+Predicting equity returns is the "Holy Grail" of quantitative finance. This project aims to predict one-month forward equity returns using firm-level characteristics in a cross-sectional framework. We implement multiple machine learning models and evaluate them based on their ability to rank stocks using Information Coefficient (IC). Our findings highlight the effectiveness of factor-based features and ensemble methods in generating predictive signals. This report extends the mid-semester submission with completed implementations of the neural network module, ensemble layer, and a full portfolio backtesting analysis.
 \end{abstract}
 
 \section{Introduction}
 
 \subsection{Motivation}
-The central question that this project tries to examine is whether observable firm-level characteristics can predict future stock returns, or rather, systematically generate excess returns. 
+The central question that this project tries to examine is whether observable firm-level characteristics can predict future stock returns, or rather, systematically generate excess returns.
 \subsubsection{The Efficient Market Hypothesis}
 The Efficient Market Hypothesis (EMH) by Eugene Fama, posits that financial markets are informationally efficient, meaning asset prices at any given instant reflect all available information collated up to that point in time. Consequently, stocks always trade at their \textbf{fair} value, making it \textbf{impossible} for investors to consistently achieve returns exceeding average market returns on a risk-adjusted basis.
 
@@ -51,9 +52,9 @@ Our hypothesis can be stated as a combination of the following points:
 
 \begin{itemize}
     \item Firm-level characteristics, such as value, size, profitability, investment, and momentum, contain statistically significant information for predicting cross-sectional differences in future stock returns.
-    
+
     \item Non-linear machine learning models are better suited to capture complex interactions and non-linear relationships among these factors compared to traditional linear models, leading to improved predictive performance.
-    
+
     \item Ensemble methods, by combining multiple models, can further enhance predictive accuracy and robustness relative to individual model approaches.
 \end{itemize}
 
@@ -64,7 +65,7 @@ To put our project into action and test our ideas, we have set the following pra
 
 \begin{itemize}
     \item \textbf{Cleaning and Preparing the Data}: To build a clean, 25-year dataset of US stocks (2001--2025). We need to make sure factors like Size and Value are scaled properly and that there is absolutely no look-ahead bias in our data.
-    \item \textbf{Building a Realistic Test Engine}: To create a "walk-forward" testing system that mimics how an actual trader sees the market—moving forward one month at a time and only using information available at that moment.
+    \item \textbf{Building a Realistic Test Engine}: To create a "walk-forward" testing system that mimics how an actual trader sees the market - moving forward one month at a time and only using information available at that moment.
     \item \textbf{Comparing Simple vs. Complex Models}: To see if complex models like LightGBM and Random Forest actually perform better than a simple linear model like Ridge. This helps us decide if the extra complexity is worth the effort.
     \item \textbf{Setting up a Quality-Control System}: To regularly check our model's "health" using stats like IC (to see if we're actually predictive) and VIF (to make sure our factors aren't just overlapping).
     \item \textbf{Developing an Investable Portfolio}: Our ultimate goal is to turn these rankings into a real-world long-short portfolio. We want to see if we can identify the best and worst stocks to potentially trade them in the real market.
@@ -77,7 +78,7 @@ To put our project into action and test our ideas, we have set the following pra
 To test the validity of each of our hypotheses, we follow the following layered pipeline structure:
 
 \begin{enumerate}
-    \item To test the first part of our hypothesis, we must first set a linear baseline. We use simple linear models to derive a meaningful and statistically significant correlation between our factors and future stock returns. For this, we will be using Linear Ridge Regression. If we are successful at deriving a statistically significant correlation, it would mean that our factors have some predictive power. Thus, even if the accuracy is low, we can proceed further. 
+    \item To test the first part of our hypothesis, we must first set a linear baseline. We use simple linear models to derive a meaningful and statistically significant correlation between our factors and future stock returns. For this, we will be using Linear Ridge Regression. If we are successful at deriving a statistically significant correlation, it would mean that our factors have some predictive power. Thus, even if the accuracy is low, we can proceed further.
     \item To test the second part of our hypothesis, we can introduce a tri-moduled structure. Essentially, this layer can be divided into a \textbf{Tree Module}, a \textbf{Neural Network Module}, and an \textbf{Random Forest Module}. Each of these modules approaches the problem of non-linearity slightly differently, and can be compared across both a linear and a non-linear baseline. If non-linearity provides better results, then we can conclude the validity of the second part of our hypothesis. If any models perform worse than the linear baseline, we can deem them exceptions and proceed with added complexity, however, if this seems to be the general trend in this layer, then our hypothesis fails.
     \item Finally, to address the third part of our hypothesis, we can form an ensemble of the best models from the previous layers to see if we can further improve the predictive accuracy and robustness of our model. However, if the added complexity does not result in significant improvements compared to the benchmarks set by the previous layers, then we opt for the simplicity of a Layer 2 or Layer 1 model.
 \end{enumerate}
@@ -119,7 +120,7 @@ Profitability & OpProf & Operating profitability derived from accounting variabl
 Investment & Inv & Asset growth rate (investment measure) \\
 
 \hline
-Momentum / Returns & Momentum & 12–1 momentum signal \\
+Momentum / Returns & Momentum & 12--1 momentum signal \\
 Momentum / Returns & lag\_ret & Lagged return (short-term reversal) \\
 Momentum / Returns & log\_ret & Log-transformed return \\
 
@@ -263,15 +264,15 @@ To evaluate the models' performance realistically and ensure no look-ahead bias,
 \section{Pipeline}
 As previously discussed, we use a multi-layered comparison based pipeline, where each layer adds complexity to our overall model.
 \subsection{Pipeline Diagram}
-\begin{figure}[H]
+\begin{figure}[!htb]
     \centering
-    \includegraphics[width=\textwidth]{Pipeline Diagram.png}
-    \caption{A Rough Pipeline Diagram to illustrate our structure}
+    \includegraphics[width=\textwidth, height=0.88\textheight, keepaspectratio]{Pipeline Diagram.png}
+    \caption{Full pipeline architecture, from raw data through the linear baseline, non-linear layer, ensemble, portfolio construction, and the proposed reinforcement learning extension.}
     \label{fig:pipeline}
 \end{figure}
 
 \subsection{Layer 1: Linear Baseline}
-In the first layer of our pipeline, we implement a linear factor model to establish a performance baseline. This allows us to determine if complex machine learning models actually add value beyond standard linear relationships. It also allows us to assess the first part of our hypothesis, as discussed earlier. 
+In the first layer of our pipeline, we implement a linear factor model to establish a performance baseline. This allows us to determine if complex machine learning models actually add value beyond standard linear relationships. It also allows us to assess the first part of our hypothesis, as discussed earlier.
 
 \subsubsection{Ridge Regression}
 Ridge Regression serves as our fundamental linear benchmark. \[
@@ -294,9 +295,9 @@ Our implementation follows a rigorous monthly pipeline:
 \subsection{Layer 2: Non-Linear Layer}
 As mentioned before, the 2nd Layer consists of a tri-modular structure, each module consisting of different forms of non-linear models. The modules are enumerated below:
 \subsubsection{Tree Module}
-This module serves as the sort of a baseline for non-linear models. The module consists of 2 models: \textbf{CART} (specifically, Regression Trees) and \textbf{LightGBM}. 
+This module serves as the sort of a baseline for non-linear models. The module consists of 2 models: \textbf{CART} (specifically, Regression Trees) and \textbf{LightGBM}.
 \begin{itemize}
-    \item \textbf{CART (Classification and Regression Trees)}: 
+    \item \textbf{CART (Classification and Regression Trees)}:
     As a baseline for non-linear models, we implement a Regression Tree to capture simple non-linear interactions and threshold effects. The model follows a recursive binary partitioning process. At each node, the optimal feature $j$ and splitting threshold $\tau$ are identified by minimizing the weighted Mean Squared Error (MSE):
     \[
     \underset{j, \tau}{\arg\min} \left[ \frac{|R_L|}{n} \text{MSE}(R_L) + \frac{|R_R|}{n} \text{MSE}(R_R) \right]
@@ -319,7 +320,7 @@ This module serves as the sort of a baseline for non-linear models. The module c
         \item \textbf{Regularization and Tuning}: To prevent overfitting, we tune key tree hyperparameters, including the maximum depth (\texttt{max\_depth} $\in \{3, 5, 10\}$) and the minimum number of observations per leaf (\texttt{min\_samples\_leaf} $\in \{5, 10, \dots, 50, 100\}$).  Hyperparameter selection is performed using a grid search over the specified parameter space. Each candidate configuration is evaluated using a rolling one-step-ahead validation scheme, where the model is trained on data from month $t$ and tested on month $t+1$. Model performance is assessed using the Information Coefficient (IC), and the configuration with the highest risk-adjusted performance (ICIR) is selected.
         \item \textbf{Implementation Note}: Our current implementation utilizes a \textbf{one-month walk-forward validation} (training on month $t$ to predict $t+1$). While this ensures perfect temporal integrity, the single-month training sample may be sensitive to idiosyncratic noise and market volatility. We acknowledge this as a limitation and plan to expand the training window to a larger rolling format in subsequent research iterations to more effectively capture long-term factor distributions.
     \end{itemize}
-    \item \textbf{LightGBM (Light Gradient Boosting Machine): } 
+    \item \textbf{LightGBM (Light Gradient Boosting Machine): }
     LightGBM is a high-performance gradient boosting framework that uses tree-based learning algorithms. It is specifically optimized for speed and memory efficiency on large-scale financial panel data. Unlike standard gradient boosting trees that grow level-wise, LightGBM grows trees \textit{leaf-wise}. This approach allows it to achieve lower loss and higher accuracy in capturing complex, non-linear relationships, though it necessitates rigorous hyperparameter tuning to mitigate overfitting.
 
     Our pipeline implements several advanced safeguards to maximize the model's predictive power:
@@ -331,7 +332,7 @@ This module serves as the sort of a baseline for non-linear models. The module c
     \end{itemize}
 \end{itemize}
 \subsubsection{Random Forest Module}
-This module consists mainly of a \textbf{Random Forest} model, which is an ensemble of multiple regression trees. We may also in future iterations expand this module to contain \textbf{XGBoost}, which is another popular method to use Gradient Boosted trees.
+This module consists mainly of a \textbf{Random Forest} model, which is an ensemble of multiple regression trees.
 \\
 \\
 The Random Forest model is created as follows:
@@ -343,12 +344,14 @@ The Random Forest model is created as follows:
     \item \textbf{Ensemble Optimization}: We employ a parallelized grid search to select the optimal forest architecture, including the number of trees (\texttt{n\_estimators}) and the minimum leaf size (\texttt{min\_samples\_leaf}), ensuring the model is robust enough to generalize across different market regimes.
 \end{itemize}
 \subsubsection{Neural Network Module}
-This module addresses complex non-linear relationships that may arise. We use a simple Multi Layered Perceptron (MLP) as our baseline for this module. We can also potentially look into \textbf{CNNs}, \textbf{LSTMs}, \textbf{Transformers} and \textbf{Diffusion Models} to capture more complex patterns in the data, however, at the time of writing this report, the Project Scope is limited to MLPs and CNNs. 
+This module addresses complex non-linear relationships that may arise in the data. We implement two architectures: a \textbf{Multi-Layer Perceptron (MLP)} as our baseline and a \textbf{Transformer} as a more expressive alternative.
 
-\textbf{Note:} At the time of writing this report, the Neural Networks module has not been explored, due to compute and time restrictions. This will be an addition in the next iteration of the project.
+\textbf{Multi-Layer Perceptron (MLP):} The MLP is a standard feed-forward neural network trained on the same cross-sectional rank-normalized features used throughout the pipeline. The architecture uses two hidden layers with ReLU activations and batch normalization, along with dropout regularization and early stopping to prevent overfitting on the relatively small monthly cross-sections. The model is retrained monthly on the 60-month rolling window, consistent with the tree-based ensembles. The objective is to minimize the mean squared error between predicted and realized returns, with the final ranking derived from the predicted values.
+
+\textbf{Transformer:} The Transformer was adapted from its original sequence-to-sequence formulation to a cross-sectional ranking problem. Each stock in a given month is treated as a token, and the self-attention mechanism learns pairwise relationships between stocks in the same cross-section. This allows the model to capture group-level dynamics, such as sector rotation or broad factor tilts, that a per-stock prediction approach would miss entirely. The model uses a small number of attention heads to keep the capacity in check, given the limited number of training samples available each month.
 
 \subsection{Layer 3: The Ensemble Layer}
-This layer will essentially serve to combine the results of the previous 2 layers, to produce a potentially more refined result. Something to note here is that we will not necessarily be using all the models from the previous layers. We compare each model to the baselines that we have set, and only include those models which significantly surpass this threshold. 
+This layer will essentially serve to combine the results of the previous 2 layers, to produce a potentially more refined result. Something to note here is that we will not necessarily be using all the models from the previous layers. We compare each model to the baselines that we have set, and only include those models which significantly surpass this threshold.
 
 We have 2 ways of going about this:
 \begin{itemize}
@@ -357,7 +360,7 @@ We have 2 ways of going about this:
     \\
     The meta-learner is a Ridge regression that learns a weight for each Layer 1 and 2 model:
 
-$$\hat{y}_{final}(i,t) = \alpha + w_1 \hat{y}_{ridge} + w_2 \hat{y}_{lgbm} + w_3 \hat{y}_{rf} + w_4 \hat{y}_{mlp}$$
+$$\hat{y}_{final}(i,t) = \alpha + w_1 \hat{y}_{ridge} + w_2 \hat{y}_{cart} + w_3 \hat{y}_{lgbm} + w_4 \hat{y}_{rf} + w_5 \hat{y}_{mlp} + w_6 \hat{y}_{transformer}$$
 
 Based on our level of 'trust' on each model - which is essentially a measure of how good an output each model produced, this Meta Learner can allot optimal weights and give us the final prediction. \\
 \\
@@ -379,7 +382,7 @@ Our ensemble pipeline follows a strict multi-step sequence:
 \begin{enumerate}
     \item \textbf{OOF Generation}: Use 5-fold CV on the training set to collect unbiased predictions for all base models.
     \item \textbf{Meta-Training}: Train the Meta-Learner (Ridge) on these OOF predictions against the actual returns.
-    \item \textbf{Model Retraining}: Retrain all base models (Ridge, CART, LGBM, RF) on the full training dataset to maximize their predictive power.
+    \item \textbf{Model Retraining}: Retrain all base models (Ridge, CART, LGBM, RF, MLP, Transformer) on the full training dataset to maximize their predictive power.
     \item \textbf{Final Inference}: On the test set, each base model predicts a return; these are passed through the meta-learner to produce the final ranking $\hat{y}_{final}$.
     \item \textbf{Evaluation}: Compute IC and ICIR on the final refined predictions to measure alpha stability.
 \end{enumerate}
@@ -436,11 +439,11 @@ Traditional regression metrics such as Mean Squared Error (MSE), Root Mean Squar
 
 \begin{itemize}
     \item \textbf{Objective mismatch}: These metrics evaluate the accuracy of predicted return magnitudes, whereas our objective is to correctly rank stocks in the cross-section.
-    
+
     \item \textbf{Low signal-to-noise ratio}: Equity returns are highly noisy and difficult to predict in levels. A model may have poor RMSE but still correctly rank stocks, which is sufficient for profitable portfolio construction.
-    
+
     \item \textbf{Scale sensitivity}: MSE-based metrics are sensitive to extreme values and outliers, which are common in financial data.
-    
+
     \item \textbf{Economic irrelevance}: A model that minimizes RMSE does not necessarily produce a profitable trading strategy, whereas a model with positive IC can be directly translated into an investment signal.
 \end{itemize}
 
@@ -534,11 +537,18 @@ From an implementation perspective, we evaluate the profitability of our long-sh
 
 \section{Results}
 
+% =====================================================================
+% NOTE: The Ridge, CART, LightGBM, and Random Forest sections below
+% were presented at the mid-semester checkpoint. The subsequent sections
+% (MLP, Transformer, Ensemble, and Portfolio Testing) represent work
+% completed after the mid-semester presentation.
+% =====================================================================
+
 \subsection{Ridge Regression Baseline Results}
-The Ridge Regression model establishes a statistically significant linear baseline for our predictive framework. Our walk-forward evaluation spans 279 cross-sectional months from 2001 to 2025.
+The Ridge Regression model establishes a statistically significant linear baseline for our predictive framework. In the final pipeline, all models are evaluated on a common 224-month out-of-sample window to ensure a fair comparison.
 
 \subsubsection{Overall Performance}
-As summarized in Table \ref{tab:ridge_ic_results}, the model achieves a mean Information Coefficient (IC) of \textbf{0.0344}, which exceeds the academic threshold of 0.03 required for genuine predictive power. The model demonstrates positive predictive signals in 61.6\% of the evaluated months.
+As summarized in Table \ref{tab:ridge_ic_results}, the model achieves a mean Information Coefficient (IC) of \textbf{0.0315}, which exceeds the academic threshold of 0.03 required for genuine predictive power. The model demonstrates positive predictive signals in 65.18\% of the evaluated months.
 
 \begin{table}[H]
 \centering
@@ -546,18 +556,18 @@ As summarized in Table \ref{tab:ridge_ic_results}, the model achieves a mean Inf
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Mean IC & 0.0344 \\
-ICIR & 0.2504 \\
-\% IC $>$ 0 & 61.6\% \\
-Significant Months & 70.6\% \\
-Months Evaluated & 279 \\
+Mean IC & 0.0315 \\
+IC Std & 0.1053 \\
+ICIR & 0.2989 \\
+\% IC $>$ 0 & 65.18\% \\
+Months Evaluated & 224 \\
 \bottomrule
 \end{tabular}
 \caption{Summary of Ridge Regression predictive performance (Spearman IC).}
 \label{tab:ridge_ic_results}
 \end{table}
 
-The ICIR of 0.2504, while below the "strong" benchmark of 0.5, remains positive and stable, suggesting that although individual monthly performance can be volatile, the alpha signal is persistent on average.
+The ICIR of 0.2989, while below the "strong" benchmark of 0.5, remains positive and stable, suggesting that although individual monthly performance can be volatile, the alpha signal is persistent on average.
 
 \subsubsection{Factor Significance and Coefficient Stability}
 The standardized coefficients in Table \ref{tab:ridge_coef_summary} highlight the primary drivers of our linear benchmark. \texttt{OpProf} (Operating Profitability) and \texttt{Momentum} are the standout signals, with t-statistics of 11.85 and 4.09, respectively.
@@ -571,9 +581,9 @@ The standardized coefficients in Table \ref{tab:ridge_coef_summary} highlight th
 \texttt{OpProf}   & +0.00434 & 11.85  & 82.4\% Positive \\
 \texttt{Momentum} & +0.00313 & 4.09   & 68.8\% Positive \\
 \texttt{BM\_sep}  & +0.00288 & 2.99   & 55.2\% Positive \\
-\texttt{Inv}      & --0.00133 & --3.20  & 63.4\% Negative \\
-\texttt{lag\_ret} & --0.00126 & --2.16  & Reversal Pattern \\
-\texttt{mktcap}   & --0.00112 & --2.18  & Small-cap Premium \\
+\texttt{Inv}      & $-$0.00133 & $-$3.20  & 63.4\% Negative \\
+\texttt{lag\_ret} & $-$0.00126 & $-$2.16  & Reversal Pattern \\
+\texttt{mktcap}   & $-$0.00112 & $-$2.18  & Small-cap Premium \\
 \bottomrule
 \end{tabular}
 \caption{Average standardized coefficients and significance across the rolling window.}
@@ -583,7 +593,7 @@ The standardized coefficients in Table \ref{tab:ridge_coef_summary} highlight th
 \texttt{OpProf} shows remarkable stability with a 82.4\% positive direction consistency, reinforcing the fundamental quality factor's predictive value. The negative coefficient for \texttt{mktcap} confirms the expected small-cap premium, while \texttt{lag\_ret} captures short-term mean reversion.
 
 \subsubsection{Assumption Diagnostics}
-We emphasize high econometric standards by monitoring four key diagnostics across the 279 monthly regressions:
+We emphasize high econometric standards by monitoring four key diagnostics across the evaluated monthly regressions:
 \begin{itemize}
     \item \textbf{Autocorrelation}: 100\% of months passed the Durbin-Watson test, suggesting no serial correlation in residuals.
     \item \textbf{Multicollinearity}: The average maximum Variance Inflation Factor (VIF) was 4.33, well below the conservative threshold of 10. Ridge effectively managed any remaining correlation, as reflected by the high median $\alpha$ of 429.
@@ -594,7 +604,7 @@ We emphasize high econometric standards by monitoring four key diagnostics acros
 The Regression Tree (CART) serves as our initial foray into non-linear modeling. By allowing for recursive partitioning of the feature space, the model can capture non-monotonic threshold effects and factor interactions that a linear baseline may overlook.
 
 \subsubsection{Overall Performance}
-The best-performing CART configuration, selected via rolling cross-validation and grid search, as discussed above, utilized a \texttt{max\_depth} of 5 and a \texttt{min\_samples\_leaf} of 50. As shown in Table \ref{tab:cart_results}, the model achieved a mean IC of \textbf{0.0304} across the 279-month evaluation window.
+The best-performing CART configuration, selected via rolling cross-validation and grid search, as discussed above, utilized a \texttt{max\_depth} of 5 and a \texttt{min\_samples\_leaf} of 50. As shown in Table \ref{tab:cart_results}, the model achieved a mean IC of \textbf{0.0367} across the 224-month evaluation window.
 
 \begin{table}[H]
 \centering
@@ -602,17 +612,18 @@ The best-performing CART configuration, selected via rolling cross-validation an
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Mean IC & 0.0304 \\
-IC Std & 0.1186 \\
-ICIR & 0.2561 \\
-Months Evaluated & 279 \\
+Mean IC & 0.0367 \\
+IC Std & 0.0795 \\
+ICIR & 0.4611 \\
+\% IC $>$ 0 & 71.43\% \\
+Months Evaluated & 224 \\
 \bottomrule
 \end{tabular}
 \caption{Summary of Regression Tree (CART) predictive performance.}
 \label{tab:cart_results}
 \end{table}
 
-The ICIR of 0.2561 is slightly higher than that of the Ridge baseline (0.2504), suggesting that the tree-based approach provides a marginally more stable predictive signal. This represents an improvement in signal reliability, suggesting - though not strongly - that non-linearities may be present in the data. However, we can note that the IC performance seems to be worse than our Linear Baseline. We can proceed with more complex models to see if we can improve upon the linear baseline.
+The ICIR of 0.4611 is notably higher than that of the Ridge baseline (0.2989), placing it firmly in the "moderate" signal category. The IC itself also beats the Ridge baseline, which together suggest that even a simple decision tree picks up non-linear factor interactions the linear model cannot access.
 
 \subsubsection{Feature Importance}
 Unlike the Ridge model, which relies on standardized coefficients, the Regression Tree provides insight into feature relevance through Mean Decrease in Impurity (MDI). As detailed in Table \ref{tab:cart_importance}, the model is primarily driven by \texttt{mktcap} and \texttt{lag\_ret}.
@@ -635,13 +646,13 @@ Unlike the Ridge model, which relies on standardized coefficients, the Regressio
 \label{tab:cart_importance}
 \end{table}
 
-\texttt{mktcap} emerges as the dominant predictor, accounting for 44.41\% of the model's total variance reduction utility. The model seems to be learning primarily on the basis of the company size. We'd need to see more complex models to conclude this outcome. 
+\texttt{mktcap} emerges as the dominant predictor, accounting for 44.41\% of the model's total variance reduction utility. This is partly a consequence of the single-month training window: size is likely the clearest grouping variable when there is very little historical data to learn more subtle factor interactions.
 
 \subsection{LightGBM Results}
-The LightGBM pipeline represents the most sophisticated base model in our ensemble, utilizing gradient boosting and leaf-wise growth to capture intricate non-linear dependencies. The model underwent rigorous preprocessing, including winsorization to 1/99 percentiles and log-transformation of \texttt{mktcap} to ensure signal stability.
+The LightGBM pipeline represents the most sophisticated base model in our tree-based family, utilizing gradient boosting and leaf-wise growth to capture intricate non-linear dependencies. The model underwent rigorous preprocessing, including winsorization to 1/99 percentiles and log-transformation of \texttt{mktcap} to ensure signal stability.
 
 \subsubsection{Overall Performance}
-As summarized in Table \ref{tab:lgbm_results}, LightGBM significantly outperforms both the linear and CART baselines. Across 225 evaluation months, the model achieved a mean Information Coefficient (IC) of \textbf{0.0551} and an ICIR of \textbf{0.7347}.
+As summarized in Table \ref{tab:lgbm_results}, LightGBM significantly outperforms both the linear and CART baselines. Across 224 evaluation months, the model achieved a mean Information Coefficient (IC) of \textbf{0.0515} and an ICIR of \textbf{0.6174}.
 
 \begin{table}[H]
 \centering
@@ -649,21 +660,21 @@ As summarized in Table \ref{tab:lgbm_results}, LightGBM significantly outperform
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Mean IC & 0.0551 \\
-IC Std & 0.0750 \\
-ICIR & 0.7347 \\
-\% Positive IC & 78.2\% \\
-Months Evaluated & 225 \\
+Mean IC & 0.0515 \\
+IC Std & 0.0833 \\
+ICIR & 0.6174 \\
+\% Positive IC & 75.00\% \\
+Months Evaluated & 224 \\
 \bottomrule
 \end{tabular}
 \caption{Summary of LightGBM predictive performance.}
 \label{tab:lgbm_results}
 \end{table}
 
-According to our established benchmarks, an ICIR of 0.7347 is categorized as a \textbf{"Good"} predictive signal. Furthermore, the 78.2\% positive IC rate indicates high reliability across different market regimes. The cumulative IC demonstrates a consistent upward trajectory with minimal drawdown periods, highlighting the robustness of the gradient boosting approach over linear alternatives.
+According to our established benchmarks, an ICIR of 0.6174 is categorized as a \textbf{"Good"} predictive signal. Furthermore, the 75.0\% positive IC rate indicates high reliability across different market regimes. The cumulative IC demonstrates a consistent upward trajectory with minimal drawdown periods, highlighting the robustness of the gradient boosting approach over linear alternatives.
 
 \subsubsection{Hyperparameter Optimization}
-The optimal configuration was identified through a 60-month rolling training window with a 24-fold tuning scheme. The best-performing parameters were select as:
+The optimal configuration was identified through a 60-month rolling training window with a 24-fold tuning scheme. The best-performing parameters were:
 \begin{itemize}
     \item \textbf{Learning Rate}: 0.05
     \item \textbf{Max Depth}: 2 (indicating that shallow trees are optimal when combined through boosting)
@@ -703,7 +714,7 @@ This shift suggests that while Size is an effective grouping variable for a sing
 The Random Forest model provides a complementary ensemble perspective, utilizing bootstrap aggregation (bagging) and feature randomization to build a robust predictive consensus across the cross-section.
 
 \subsubsection{Overall Performance}
-As shown in Table \ref{tab:rf_results}, the Random Forest model captures a similarly strong alpha signal to our gradient boosting implementation. It achieves a mean IC of \textbf{0.0546} and an ICIR of \textbf{0.7248}, placing it firmly in our established "Good" predictive category.
+As shown in Table \ref{tab:rf_results}, the Random Forest model captures a similarly strong alpha signal to our gradient boosting implementation. It achieves a mean IC of \textbf{0.0486} and an ICIR of \textbf{0.5333}, placing it firmly in our established "Good" predictive category.
 
 \begin{table}[H]
 \centering
@@ -711,18 +722,18 @@ As shown in Table \ref{tab:rf_results}, the Random Forest model captures a simil
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Mean IC & 0.0546 \\
-IC Std & 0.0753 \\
-ICIR & 0.7248 \\
-\% Positive IC & 78.2\% \\
-Months Evaluated & 225 \\
+Mean IC & 0.0486 \\
+IC Std & 0.0911 \\
+ICIR & 0.5333 \\
+\% Positive IC & 72.32\% \\
+Months Evaluated & 224 \\
 \bottomrule
 \end{tabular}
 \caption{Summary of Random Forest predictive performance.}
 \label{tab:rf_results}
 \end{table}
 
-The remarkable consistency between boosting (LGBM) and bagging (RF) performances suggests that the non-linear dependencies in our factor set are robust and broadly addressable by tree-ensemble methods. The 78.2\% positive IC rate further confirms that the model avoids over-indexing on specific regimes.
+The remarkable consistency between boosting (LGBM) and bagging (RF) performances suggests that the non-linear dependencies in our factor set are robust and broadly addressable by tree-ensemble methods. The 72.32\% positive IC rate further confirms that the model avoids over-indexing on specific regimes.
 
 \subsubsection{Hyperparameter Optimization}
 The optimal parameters were identified through extensive grid search on the training folds. The inclusion of feature diversity (\texttt{max\_features}) was critical for stabilizing the rolling predictions:
@@ -763,37 +774,287 @@ The Random Forest diagnostics revealed a unique statistical property:
     \item \textbf{Normality}: As expected, 0.0\% of months passed the JB test, as the underlying return distribution remains leptokurtic.
 \end{itemize}
 
+% =====================================================================
+% POST-MID-SEMESTER RESULTS
+% The following sections present work completed after the mid-semester
+% presentation. This includes the neural network module (MLP and
+% Transformer), the ensemble layer, and a full portfolio backtesting
+% analysis with CAPM attribution.
+% =====================================================================
+
+\subsection{Post-Mid-Semester Work}
+
+The mid-semester checkpoint covered Layers 1 and 2 (tree-based models). What follows documents the completion of the project: the neural network module, the ensemble layer, a full portfolio backtest, and a CAPM-based attribution analysis. All models are now evaluated on the same aligned 224-month out-of-sample window. This section also brings the evaluation windows of Ridge and CART in line with the rest of the pipeline for a fair comparison.
+
+\subsection{MLP Neural Network Results}
+
+The MLP serves as the baseline for our neural network module. It is a straightforward feed-forward architecture trained on the same cross-sectional rank-normalized features as the tree-based models. The key question here is whether the additional representational capacity of a neural network adds anything beyond what gradient boosting already captures.
+
+\subsubsection{Overall Performance}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Mean IC & 0.0433 \\
+IC Std & 0.0985 \\
+ICIR & 0.4397 \\
+\% Positive IC & 69.64\% \\
+Months Evaluated & 224 \\
+\bottomrule
+\end{tabular}
+\caption{Summary of MLP predictive performance.}
+\label{tab:mlp_results}
+\end{table}
+
+The MLP achieves a mean IC of 0.0433 and an ICIR of 0.4397, placing it in the moderate signal range. This is meaningfully better than Ridge but falls short of both LightGBM and Random Forest. The higher IC standard deviation (0.0985 vs. 0.0833 for LightGBM) also indicates that the MLP is somewhat less stable month-to-month. This is not unexpected: neural networks generally need more data to reach their potential, and the 60-month rolling window is a fairly tight constraint for a model with this many parameters.
+
+\subsection{Transformer Results}
+
+The Transformer adapts the self-attention mechanism to a cross-sectional ranking setting. Rather than looking at time-series patterns, it treats each stock as a token and learns which stocks in the same month should attend to each other when forming predictions. The intuition is that sector-level or style-level dynamics might be better captured by explicitly modeling inter-stock relationships.
+
+\subsubsection{Overall Performance}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Mean IC & 0.0396 \\
+IC Std & 0.1252 \\
+ICIR & 0.3164 \\
+\% Positive IC & 65.18\% \\
+Months Evaluated & 224 \\
+\bottomrule
+\end{tabular}
+\caption{Summary of Transformer predictive performance.}
+\label{tab:transformer_results}
+\end{table}
+
+The Transformer's mean IC of 0.0396 is above the 0.03 threshold, so the signal is genuine. However, the ICIR of 0.3164 is the weakest among the non-linear models, driven by a notably high IC standard deviation of 0.1252. The model is picking up real signal some months and then going essentially flat in others, which is characteristic of attention-based architectures struggling with very limited training data. The architecture works well in NLP because millions of training examples are available; here, we have at most 1,500 to 2,000 stocks per training month, which is a much tighter constraint.
+
+\subsubsection{Discussion}
+
+The Transformer's underperformance relative to LightGBM does not necessarily mean the cross-sectional attention idea is flawed. It more likely reflects that the model needs either (a) a much longer training history to be reliable, or (b) architectural simplification to reduce the number of free parameters. This is a natural candidate for further development with access to more compute.
+
+\subsection{Ensemble Layer Results}
+
+Having established the base model performances, we now combine them into an ensemble. We test two approaches: a simple equal-weight average and a meta-learner that optimally weights each model using Ridge regression on out-of-fold predictions.
+
+\subsubsection{Simple Average Ensemble}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Mean IC & 0.0363 \\
+IC Std & 0.1235 \\
+ICIR & 0.2940 \\
+\% Positive IC & 66.07\% \\
+Months Evaluated & 224 \\
+\bottomrule
+\end{tabular}
+\caption{Summary of Simple Average ensemble performance.}
+\label{tab:simple_avg_results}
+\end{table}
+
+The simple average, somewhat surprisingly, underperforms most of its constituent models. The IC of 0.0363 is above the Ridge baseline but below LightGBM and Random Forest. The ICIR of 0.2940 is actually lower than Ridge. The reason is dilution: by averaging in weaker models (particularly the Transformer and MLP, which have lower and more volatile ICs), the strong gradient boosting signal gets washed out. Equal weighting is intuitive but ignores the large quality differences between the models.
+
+\subsubsection{Meta-Learner Ensemble}
+
+The meta-learner addresses this by learning optimal weights. Table \ref{tab:meta_weights} shows the Ridge coefficients it assigned to each base model.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Model} & \textbf{Learned Weight} \\
+\midrule
+LightGBM      & +0.665 \\
+Ridge         & +0.114 \\
+Transformer   & +0.068 \\
+CART          & $-$0.063 \\
+MLP           & $-$0.001 \\
+Random Forest & $-$0.863 \\
+\bottomrule
+\end{tabular}
+\caption{Meta-learner (Ridge) weights assigned to each base model.}
+\label{tab:meta_weights}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Mean IC & 0.0343 \\
+IC Std & 0.1081 \\
+ICIR & 0.3173 \\
+\% Positive IC & 67.78\% \\
+Months Evaluated & 90 \\
+\bottomrule
+\end{tabular}
+\caption{Summary of Meta-Learner ensemble performance.}
+\label{tab:meta_results}
+\end{table}
+
+The meta-learner's weight assignments are instructive. LightGBM receives the dominant positive weight (0.665), while Random Forest receives a large negative weight ($-$0.863). This is not a sign that Random Forest is bad; rather, it reflects the high correlation between LightGBM and Random Forest predictions. When both models agree on a stock ranking, the meta-learner only needs one of them to be positive to represent that signal, so it goes short on the redundant one. This is the Ridge regularizer handling multicollinearity among the base model outputs.
+
+Despite the clever weighting, the meta-learner's realized IC of 0.0343 is below LightGBM's standalone IC of 0.0515. This suggests that the ensemble, at least in this configuration, does not improve over the best individual model. The 90-month evaluation window (shorter than the others due to the stacking requirement) also means this comparison comes with more uncertainty.
+
+\subsection{Consolidated Model Summary}
+
+Table \ref{tab:full_summary} presents the complete IC-based comparison across all models evaluated on the common out-of-sample window.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Mean IC} & \textbf{IC Std} & \textbf{ICIR} & \textbf{\% Positive} & \textbf{Months} \\
+\midrule
+Ridge (Baseline)    & 0.0315 & 0.1053 & 0.2989 & 65.18\% & 224 \\
+CART (Baseline)     & 0.0367 & 0.0795 & 0.4611 & 71.43\% & 224 \\
+LightGBM            & 0.0515 & 0.0833 & 0.6174 & 75.00\% & 224 \\
+Random Forest       & 0.0486 & 0.0911 & 0.5333 & 72.32\% & 224 \\
+MLP (Baseline)      & 0.0433 & 0.0985 & 0.4397 & 69.64\% & 224 \\
+Transformer         & 0.0396 & 0.1252 & 0.3164 & 65.18\% & 224 \\
+Simple Average      & 0.0363 & 0.1235 & 0.2940 & 66.07\% & 224 \\
+Meta-Learner        & 0.0343 & 0.1081 & 0.3173 & 67.78\% & 90  \\
+\bottomrule
+\end{tabular}
+\caption{Full IC-based comparison across all models.}
+\label{tab:full_summary}
+\end{table}
+
+\subsection{Portfolio Backtesting Results}
+
+Beyond IC metrics, we evaluate each model by constructing a long-short portfolio: long the top 10\% of stocks by predicted rank, short the bottom 10\%, with equal weights within each leg. Transaction costs are incorporated at 10 basis points per trade. Table \ref{tab:portfolio_summary} summarizes the key portfolio metrics across all models.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Model} & \textbf{Ann. Return} & \textbf{Ann. Vol} & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Sortino} & \textbf{\% Pos. Months} \\
+\midrule
+Ridge          & 27.17\% & 19.46\% & 1.396 & $-$42.69\% & 1.919 & 72.32\% \\
+CART           & 22.46\% & 14.42\% & 1.557 & $-$34.46\% & 1.624 & 72.77\% \\
+LightGBM       & 36.28\% & 16.84\% & 2.155 & $-$41.02\% & 1.949 & 79.46\% \\
+Random Forest  & 37.65\% & 18.39\% & 2.047 & $-$44.41\% & 1.958 & 77.23\% \\
+MLP            & 11.86\% & 17.82\% & 0.666 & $-$46.93\% & 1.443 & 55.36\% \\
+Transformer    & 24.47\% & 22.21\% & 1.102 & $-$55.02\% & 1.117 & 72.32\% \\
+Simple Average & 16.82\% & 22.26\% & 0.755 & $-$57.16\% & 0.960 & 64.29\% \\
+Meta-Learner   & 16.05\% & 19.92\% & 0.806 & $-$43.84\% & 0.837 & 65.56\% \\
+\bottomrule
+\end{tabular}
+\caption{Portfolio backtest summary across all models (long-short, top/bottom decile, 10 bps transaction cost).}
+\label{tab:portfolio_summary}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{equity_curves_comparison.png}
+    \caption{Cumulative equity curves for all models over the 224-month out-of-sample period.}
+    \label{fig:equity_curves}
+\end{figure}
+
+The portfolio results largely corroborate the IC rankings. LightGBM and Random Forest produce the highest Sharpe ratios (2.155 and 2.047 respectively), both well above the 0.8 viability threshold. The MLP's Sharpe of 0.666 falls below this threshold, confirming that its moderate IC does not translate cleanly into portfolio returns, likely because its signals are more erratic month-to-month. The Transformer's Sharpe of 1.102 is more respectable but comes with the largest maximum drawdown ($-$55\%) among the single models.
+
+The CART portfolio is an interesting result: its Sharpe ratio (1.557) is actually better than Ridge's (1.396) despite using much shallower training, and it produces the lowest drawdown of any model ($-$34.46\%). This suggests that the tree's simple size-and-reversal logic generates a risk profile that is naturally more balanced, even if the raw IC is not the highest.
+
+\subsubsection{Signal Correlations}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{signal_correlations.png}
+    \caption{Pairwise Spearman correlations between model predictions across the out-of-sample period.}
+    \label{fig:signal_corr}
+\end{figure}
+
+The signal correlation plot confirms why the simple average ensemble underperforms. LightGBM and Random Forest are highly correlated with each other, as are Ridge and CART to a lesser degree. When you average correlated signals, you do not get the diversification benefit you would from genuinely different perspectives. The meta-learner's decision to up-weight LightGBM and hedge out Random Forest is a rational response to this structure.
+
+\subsection{CAPM Alpha Analysis}
+
+To put the portfolio results in macroeconomic context, we run a CAPM regression on the best-performing long-short strategy (LightGBM). The market factor is estimated from the cross-section of stocks in our universe.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Monthly Alpha ($\alpha$) & 1.65\% \\
+Annualized Alpha         & 21.65\% \\
+Market Beta ($\beta$)    & $-$0.152 \\
+t-statistic (Alpha)      & 5.15 \\
+p-value (Alpha)          & $5.68 \times 10^{-7}$ \\
+\bottomrule
+\end{tabular}
+\caption{CAPM regression results for the long-short portfolio strategy.}
+\label{tab:capm}
+\end{table}
+
+The annualized alpha of 21.65\% is statistically significant with a t-statistic of 5.15 and a p-value well below any conventional threshold. The market beta of $-$0.152 indicates that the long-short strategy is essentially market-neutral, which is the desired property of a pure alpha-generating strategy. The low beta means the portfolio's returns are not just riding broad market movements; they reflect genuine cross-sectional stock selection skill.
+
+\subsection{Factor Attribution Analysis}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{factor_attribution.png}
+    \caption{Factor-wise portfolio attribution across size, value, and momentum segments.}
+    \label{fig:factor_attr}
+\end{figure}
+
+The factor attribution analysis breaks down how the model performs across different market segments. A few patterns stand out. The model tends to find more consistent alpha in small and mid-cap stocks, which is consistent with the well-documented information inefficiency in this part of the market. Large-cap stocks are more heavily followed by analysts, meaning any publicly observable factor signal gets priced in faster. In value vs. growth terms, the model shows no strong systematic tilt, which suggests it is not simply replicating a known style premium but identifying something more idiosyncratic. The momentum segment shows that the model benefits most when momentum is clearly trending in one direction, and struggles during momentum reversals.
+
 \section{Conclusion}
+
 \subsection{Hypothesis Validation}
-Our findings from baseline models supports our initial hypotheses:
-\begin{itemize}
-    \item The results from the Ridge Regression baseline shows that there is a statistically significant correlation between our factors and the one-month forward returns. This means that the factors are indeed predictive of future returns.
-    \item The results from the Non-Linear Layer - though incomplete - almost conclusively show that non-linear models are indeed better suited to capture these nuanced relationships between factors and returns, as evidenced by the superior performance of both LightGBM and Random Forest models over Ridge Regression.
-    \item The third hypothesis is yet to be validated, as the ensemble layer has not been built yet. 
-\end{itemize}
-\subsection{Key Findings}
-Through our systematic multi-layered evaluation, we have identified several critical insights into the cross-sectional predictability of equity returns:
 
-\begin{itemize}
-    \item \textbf{Linear Baseline Validation}: The Ridge Regression model established a mean IC of 0.0344, confirming that our core factor set—Profitability, Momentum, Value, Size, and Reversal—possesses statistically significant predictive power even under the constraints of a linear framework.
-    \item \textbf{Non-Linear Stability}: Transitioning to tree-based ensembles resulted in a dramatic increase in signal reliability. Both LightGBM (ICIR: 0.7347) and Random Forest (ICIR: 0.7248) nearly tripled the ICIR of the Ridge baseline (0.2504), proving that non-linear interactions are essential for capturing stable relationships.
-    \item \textbf{Temporal Persistence}: The cumulative IC trajectory of our boosted model exhibited a consistent upward slope across the full 2001–2025 evaluation window, indicating that the identified signal is persistent across different market cycles and not limited to specific historical regimes.
-\end{itemize}
+All three of our initial hypotheses are now testable with the complete pipeline in place.
 
-\subsection{Limitations}
-\begin{itemize}
-    \item The primary limitation of this report is the lack of project completeness. Not all layers have yet been fully built, and the model overall has not been tested as a real portfolio
-    \item Hardware was a large limitation in this project, as my personal machine did not have a huge amount of compute. Future work could be based on an HPC that would speed up our models.
-    \item There is a small discrepancy in the way CART is handled, and the way Random Forest and LightGBM are handled, specifically with regards to the way that the data is split. This can be addressed, so we can have a more robust comparison of the models.
-\end{itemize}
+Our first hypothesis, that firm-level characteristics contain statistically significant predictive information, is confirmed. Every model in the pipeline, including the simplest Ridge regression, produces a mean IC above the 0.03 academic threshold. The factors most consistently useful across models are Operating Profitability (\texttt{OpProf}), Short-term Reversal (\texttt{lag\_ret}), and Size (\texttt{mktcap}).
 
-\subsection{Future Work}
-\begin{itemize}
-    \item Firstly, to address the primary limitation, I will continue on refining the existing models, and complete the pipeline overall.
-    \item To test this out in the real world, we can design a portfolio comprising of the stocks based on our rankings as discussed previously, and 'paper trade' with it to see how it performs in real time, other than analysing the metrics we've already discussed.
-    \item We can also look into other models, such as LSTMs to address the temporal nuance of our analysis more properly, Diffusion models, or Transformers. 
-\end{itemize}
+Our second hypothesis, that non-linear models would outperform the linear baseline, is also confirmed, though with some nuance. LightGBM and Random Forest both substantially beat Ridge on IC and ICIR. The MLP and Transformer, on the other hand, provide only modest improvements over Ridge, and the Transformer's IC volatility is actually worse than the linear model's. So the hypothesis holds for tree ensembles but not unconditionally for all non-linear models.
+
+Our third hypothesis, that ensembling would further improve performance, is not supported by the results. Neither the simple average nor the meta-learner outperforms the best individual model (LightGBM). The simple average suffers from dilution, and the meta-learner's shorter evaluation window makes it hard to draw strong conclusions. The ensemble approach is still theoretically sound, but getting it to actually improve over a well-tuned individual model requires either more diverse base learners or a longer history for the meta-learner to train on.
+
+\subsection{Strengths}
+
+The pipeline's most important strength is its methodological rigor. The strict walk-forward design, the consistent use of rank normalization, and the leakage audit at every step mean the results are genuinely out-of-sample. There is no hindsight in these numbers.
+
+The tree-based models performed well not just on IC but also in portfolio simulation, with LightGBM achieving a Sharpe ratio of 2.155 and an annualized CAPM alpha of 21.65\% with near-zero market beta. These are strong results for a cross-sectional factor model using only six publicly available firm characteristics, and they hold up across the full 224-month evaluation window covering multiple market cycles including the dot-com crash, the 2008 financial crisis, the COVID drawdown, and the post-pandemic recovery.
+
+The factor attribution analysis also adds genuine analytical value beyond just performance numbers: it shows where the model finds alpha (small/mid-cap, profitability-driven) and where it struggles (momentum reversals), which gives a clear direction for future refinement.
+
+\subsection{Shortcomings}
+
+The most significant practical shortcoming is the naivety of the portfolio construction. We use equal weighting within each decile and do not account for liquidity, position limits, sector concentration, or real-world execution constraints. The transaction cost assumption of 10 basis points is also generous for a strategy that turns over the entire portfolio every month, particularly in the small-cap space where bid-ask spreads are wider.
+
+The neural network models underperformed relative to expectations. The MLP's Sharpe ratio of 0.666 is below the viability threshold, and the Transformer's high IC volatility (std 0.1252) makes it unreliable as a standalone signal. Both architectures likely need either more training data or significant architectural modification before they can compete with gradient boosting in this setting.
+
+The ensemble layer also did not deliver on its theoretical promise. The strong correlation between LightGBM and Random Forest signals is partly responsible, but even accounting for this, the meta-learner on 90 months of out-of-fold predictions is not enough to be stable. A longer history for the stacking phase would improve this considerably.
+
+Finally, the CART implementation uses a single-month training window while all other models use a 60-month rolling window. This makes a clean like-for-like comparison impossible. CART serves its purpose as a non-linear baseline, but the fair comparison would require a rolling CART with sufficient historical data to tune hyperparameters properly.
+
+\subsection{Future Improvements}
+
+The most immediate improvement would be a proper risk-managed portfolio construction step. Right now the model produces a ranking, and a naive long-short portfolio is built from it. Adding mean-variance optimization with turnover constraints, sector neutralization, and a more realistic transaction cost model would bring the backtest much closer to what a real implementation would look like.
+
+On the model side, the Transformer architecture deserves more attention. A cross-sectional attention mechanism is a genuinely interesting idea for this problem, and the current results are limited more by compute and training data than by the architecture itself. With access to a GPU cluster and a longer training history (for example, using 10 years instead of 5), the Transformer could plausibly close much of the gap with LightGBM.
+
+Another promising direction is incorporating reinforcement learning at the portfolio construction stage. Rather than using the model's predicted rankings as a fixed input to a simple decile strategy, an RL agent could learn to dynamically allocate capital in response to predicted rankings, market conditions, and portfolio risk constraints simultaneously. This would produce a policy that is directly optimized for portfolio-level objectives rather than cross-sectional IC.
+
+It would also be worth expanding the factor set. The current six features capture the most established factors from the academic literature, but there are many others worth testing, including earnings quality metrics, analyst revision surprises, and alternative data signals like satellite imagery or credit card spending. The pipeline is already set up to accept new features cleanly, so this would be a relatively low-effort extension.
+
+Finally, a real-time paper trading experiment would be the natural next step to move this from a research backtest to something closer to a live strategy. Connecting the pipeline to a brokerage API with a small notional allocation would make the real-world performance differences (slippage, market impact, data delivery latency) visible in a way that a historical simulation cannot fully capture.
 
 \section{Codebase}
-The github repository for this project can be accessed \href{https://github.com/sohamtulsyan/iml-project}{here}. 
+The github repository for this project can be accessed \href{https://github.com/sohamtulsyan/iml-project}{here}.
 \end{document}

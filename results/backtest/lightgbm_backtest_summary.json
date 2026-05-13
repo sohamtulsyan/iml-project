@@ -1,0 +1,18 @@
+{
+  "source": "lightgbm",
+  "annualized_return": 0.362843,
+  "annualized_vol": 0.168406,
+  "sharpe_ratio": 2.154575,
+  "max_drawdown": -0.410245,
+  "calmar_ratio": 0.884455,
+  "sortino_ratio": 1.948885,
+  "pct_positive_months": 79.46,
+  "total_return": 322.336317,
+  "long_return": 4945.537337,
+  "short_return": NaN,
+  "tc_drag_annualized": 0.020661,
+  "n_months": 224,
+  "long_pct_used": 0.1,
+  "short_pct_used": 0.1,
+  "tc_bps": 10.0
+}

@@ -1,0 +1,18 @@
+{
+  "source": "meta_learner",
+  "annualized_return": 0.160495,
+  "annualized_vol": 0.199238,
+  "sharpe_ratio": 0.805541,
+  "max_drawdown": -0.438442,
+  "calmar_ratio": 0.366057,
+  "sortino_ratio": 0.837174,
+  "pct_positive_months": 65.56,
+  "total_return": 2.05368,
+  "long_return": 4883.762434,
+  "short_return": -1.0,
+  "tc_drag_annualized": 0.059408,
+  "n_months": 90,
+  "long_pct_used": 0.1,
+  "short_pct_used": 0.1,
+  "tc_bps": 10.0
+}

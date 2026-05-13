@@ -1,0 +1,18 @@
+{
+  "source": "simple_average",
+  "annualized_return": 0.168175,
+  "annualized_vol": 0.222611,
+  "sharpe_ratio": 0.755467,
+  "max_drawdown": -0.571568,
+  "calmar_ratio": 0.294235,
+  "sortino_ratio": 0.959519,
+  "pct_positive_months": 64.29,
+  "total_return": 17.203317,
+  "long_return": 4815.813152,
+  "short_return": NaN,
+  "tc_drag_annualized": 0.088128,
+  "n_months": 224,
+  "long_pct_used": 0.1,
+  "short_pct_used": 0.1,
+  "tc_bps": 10.0
+}

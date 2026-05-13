@@ -1,0 +1,18 @@
+{
+  "source": "transformer",
+  "annualized_return": 0.244687,
+  "annualized_vol": 0.222054,
+  "sharpe_ratio": 1.101924,
+  "max_drawdown": -0.550153,
+  "calmar_ratio": 0.444762,
+  "sortino_ratio": 1.116896,
+  "pct_positive_months": 72.32,
+  "total_return": 58.491671,
+  "long_return": 4828.691621,
+  "short_return": NaN,
+  "tc_drag_annualized": 0.020156,
+  "n_months": 224,
+  "long_pct_used": 0.1,
+  "short_pct_used": 0.1,
+  "tc_bps": 10.0
+}

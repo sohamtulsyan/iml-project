@@ -1,0 +1,18 @@
+{
+  "source": "mlp",
+  "annualized_return": 0.118571,
+  "annualized_vol": 0.178164,
+  "sharpe_ratio": 0.665519,
+  "max_drawdown": -0.46928,
+  "calmar_ratio": 0.252666,
+  "sortino_ratio": 1.442798,
+  "pct_positive_months": 55.36,
+  "total_return": 7.098184,
+  "long_return": 4855.792347,
+  "short_return": -1.0,
+  "tc_drag_annualized": 0.02331,
+  "n_months": 224,
+  "long_pct_used": 0.1,
+  "short_pct_used": 0.1,
+  "tc_bps": 10.0
+}

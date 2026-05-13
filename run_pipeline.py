@@ -217,6 +217,7 @@ def main():
     # ── Ensemble ──────────────────────────────────────────────────────────────
     finished_models = [mn for mn in ALL_MODELS
                        if (results_dir / mn / f"{mn}_test_predictions.parquet").exists()]
+    
 
     ens_ic_summaries = {}
 
@@ -230,25 +231,28 @@ def main():
 
         # Simple average (always runs if ≥ 2 test predictions exist)
         try:
-            avg = SimpleAverageEnsemble(finished_models, results_dir / "ensemble", cfg)
+            avg = SimpleAverageEnsemble(finished_models, results_dir, cfg)
             ens_ic_summaries["simple_average"] = avg.run()
         except Exception as e:
             print(f"  [SimpleAverage] Error: {e}")
 
-        # MetaLearner (requires OOF predictions for all models)
+        # MetaLearner (prefers OOF, falls back to Test-Split)
         oof_ready = [mn for mn in finished_models
                      if (results_dir / mn / f"{mn}_oof_predictions.parquet").exists()]
-        if len(oof_ready) >= 2:
+        
+        models_for_meta = oof_ready if len(oof_ready) >= 2 else finished_models
+
+        if len(models_for_meta) >= 2:
             try:
-                ml  = MetaLearnerEnsemble(oof_ready, results_dir / "ensemble", cfg)
+                ml  = MetaLearnerEnsemble(models_for_meta, results_dir, cfg)
                 ens_ic_summaries["meta_learner"] = ml.run()
             except Exception as e:
                 print(f"  [MetaLearner] Error: {e}")
         else:
-            print(f"  [MetaLearner] Need OOF predictions for ≥ 2 models "
-                  f"(found: {oof_ready})")
+            print(f"  [MetaLearner] Need ≥ 2 models to ensemble (found: {len(models_for_meta)})")
 
     # ── Backtest ──────────────────────────────────────────────────────────────
+    port_summaries = {}
     if args.backtest:
         from equity_pipeline.backtest.portfolio import PortfolioConstructor
         from equity_pipeline.backtest.engine    import BacktestEngine
@@ -262,34 +266,79 @@ def main():
         eng = BacktestEngine(cfg)
         rpt = BacktestReport()
 
-        bt_sources = finished_models + [s for s in ["simple_average","meta_learner"]
-                     if (results_dir / "ensemble" / f"{s}_test_predictions.parquet").exists()]
+        bt_sources = finished_models.copy()
+        if (results_dir / "ensemble" / "simple_average" / "simple_average_test_predictions.parquet").exists():
+            bt_sources.append("simple_average")
+        if (results_dir / "ensemble" / "meta_learner" / "meta_learner_test_predictions.parquet").exists():
+            bt_sources.append("meta_learner")
 
-        port_summaries = {}
         for source in bt_sources:
             if source in ["simple_average","meta_learner"]:
-                pred_path = results_dir / "ensemble" / f"{source}_test_predictions.parquet"
-                bt_dir    = results_dir / "ensemble" / "backtest"
+                pred_path = results_dir / "ensemble" / source / f"{source}_test_predictions.parquet"
+                bt_dir    = results_dir / "ensemble" / source / "backtest"
             else:
                 pred_path = results_dir / source / f"{source}_test_predictions.parquet"
                 bt_dir    = results_dir / "backtest"
 
             if not pred_path.exists():
                 continue
+            
+            bt_dir.mkdir(parents=True, exist_ok=True)
             try:
-                pos_path = pc.run(pred_path, source, results_dir / "backtest")
+                pos_path = pc.run(pred_path, source, bt_dir)
                 port_summaries[source] = eng.run(pos_path, source)
-                rpt.generate(source, results_dir)
+                # Use source-specific directory for reports
+                rpt.generate(source, bt_dir.parent)
             except Exception as e:
                 print(f"  [Backtest/{source}] Error: {e}")
 
     # ── Final comparison table ────────────────────────────────────────────────
     all_ic = {**ic_summaries, **ens_ic_summaries}
     if all_ic:
-        df_cmp = print_full_comparison(all_ic)
-        cmp_path = results_dir / "full_comparison.csv"
-        df_cmp.to_csv(cmp_path, index=False)
-        print(f"  ✓ {cmp_path}")
+        def print_full_comparison(ic_summaries, port_summaries, results_dir):
+            """
+            Prints and saves a table comparing all models.
+            """
+            rows = []
+            all_names = list(ic_summaries.keys())
+            
+            for name in all_names:
+                if name not in port_summaries:
+                    if name in ["simple_average", "meta_learner"]:
+                        bt_sum_path = results_dir / "ensemble" / name / "backtest" / f"{name}_backtest_summary.json"
+                    else:
+                        bt_sum_path = results_dir / "backtest" / f"{name}_backtest_summary.json"
+                    
+                    if bt_sum_path.exists():
+                        with open(bt_sum_path, 'r') as f:
+                            import json
+                            port_summaries[name] = json.load(f)
+
+            for name in all_names:
+                ic_s = ic_summaries.get(name, {})
+                bt_s = port_summaries.get(name, {})
+                
+                rows.append({
+                    "Model": name,
+                    "Mean IC": f"{ic_s.get('mean_ic', 0):+.4f}",
+                    "ICIR": f"{ic_s.get('icir', 0):+.4f}",
+                    "Sharpe": f"{bt_s.get('sharpe_ratio', 0):.3f}" if bt_s else "—",
+                    "MaxDD": f"{bt_s.get('max_drawdown', 0)*100:.2f}%" if bt_s else "—",
+                    "Ann.Ret": f"{bt_s.get('annualized_return', 0)*100:.2f}%" if bt_s else "—",
+                    "Ann.Vol": f"{bt_s.get('annualized_vol', 0)*100:.2f}%" if bt_s else "—"
+                })
+            
+            df = pd.DataFrame(rows)
+            print(f"\n{'═'*82}\n  FULL PIPELINE RESULTS — ALL MODELS\n{'═'*82}")
+            print(df.to_string(index=False))
+            print(f"\n  Stat. threshold : Mean IC > 0.03, ICIR > 0.5 for reliable signal")
+            print(f"  Econ. threshold : Sharpe > 0.8 to be considered implementable")
+            print(f"{'═'*82}\n")
+            
+            df.to_csv(results_dir / "full_comparison.csv", index=False)
+            print(f"  ✓ {results_dir / 'full_comparison.csv'}")
+
+        print_full_comparison(all_ic, port_summaries, results_dir)
 
     total_min = (time.time() - wall_t0) / 60
     print(f"\n[Pipeline] Total time: {total_min:.1f} min")

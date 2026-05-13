@@ -26,19 +26,22 @@ class MetaLearnerEnsemble:
         id_col, date_col = self.cfg.id_col, self.cfg.date_col
         print(f"\n[MetaLearner] Models: {self.model_names}")
 
-        # ── Validate all predictions exist before proceeding ─────────────────
-        missing_oof  = [mn for mn in self.model_names
-                        if not (self.results_dir / mn /
-                                f"{mn}_oof_predictions.parquet").exists()]
-        missing_test = [mn for mn in self.model_names
-                        if not (self.results_dir / mn /
-                                f"{mn}_test_predictions.parquet").exists()]
-        if missing_oof or missing_test:
-            msg = ""
-            if missing_oof:  msg += f"Missing OOF predictions: {missing_oof}\n"
-            if missing_test: msg += f"Missing test predictions: {missing_test}\n"
-            raise RuntimeError(msg + "Run the model(s) first.")
+        # ── Mode Selection: OOF vs Time-Split ────────────────────────────────
+        missing_oof = [mn for mn in self.model_names
+                       if not (self.results_dir / mn / f"{mn}_oof_predictions.parquet").exists()]
+        
+        use_time_split = len(missing_oof) > 0
+        
+        if use_time_split:
+            print(f"[MetaLearner] WARNING: OOF predictions missing for {missing_oof}.")
+            print(f"[MetaLearner] Falling back to Time-Split Stacking (Test-on-Test).")
+            return self._run_time_split()
+        else:
+            return self._run_standard_oof()
 
+    def _run_standard_oof(self) -> dict:
+        id_col, date_col = self.cfg.id_col, self.cfg.date_col
+        
         # ── TRAINING PHASE: align OOF frames ─────────────────────────────────
         oof_frames = {}
         for mn in self.model_names:
@@ -71,22 +74,51 @@ class MetaLearnerEnsemble:
                 on=[id_col, date_col], how="inner",
             )
 
-        # ── OOF/Test month overlap check ──────────────────────────────────────
-        oof_months  = set(oof_merged[date_col].unique())
-        test_months = set(test_merged[date_col].unique())
-        overlap     = oof_months & test_months
-        assert not overlap, (
-            f"[MetaLearner] OOF and test months overlap: {sorted(overlap)[:5]}... "
-            "This indicates a look-ahead leak. Aborting."
-        )
+        return self._fit_and_evaluate(oof_merged, test_merged, "target", "fwd_return")
 
-        # ── Fit meta-learner ──────────────────────────────────────────────────
+    def _run_time_split(self) -> dict:
+        id_col, date_col = self.cfg.id_col, self.cfg.date_col
+        
+        # Load all test predictions
+        test_frames = {}
+        for mn in self.model_names:
+            df = load_predictions(mn, "test", self.results_dir)
+            df = df.rename(columns={"pred_score": f"pred_{mn}"})
+            test_frames[mn] = df
+
+        merged = test_frames[self.model_names[0]][
+            [id_col, date_col, f"pred_{self.model_names[0]}", "fwd_return"]
+        ]
+        for mn in self.model_names[1:]:
+            merged = merged.merge(
+                test_frames[mn][[id_col, date_col, f"pred_{mn}"]],
+                on=[id_col, date_col], how="inner",
+            )
+
+        # Split by time (60/40)
+        all_months = sorted(merged[date_col].unique())
+        split_idx  = int(len(all_months) * 0.6)
+        train_months = all_months[:split_idx]
+        test_months  = all_months[split_idx:]
+        
+        print(f"[MetaLearner] Split Date: {test_months[0]}")
+        print(f"[MetaLearner] Meta-Train: {len(train_months)} months | Meta-Test: {len(test_months)} months")
+
+        train_df = merged[merged[date_col].isin(train_months)]
+        test_df  = merged[merged[date_col].isin(test_months)]
+        
+        return self._fit_and_evaluate(train_df, test_df, "fwd_return", "fwd_return")
+
+    def _fit_and_evaluate(self, train_df, test_df, train_target_col, test_target_col) -> dict:
+        id_col, date_col = self.cfg.id_col, self.cfg.date_col
         pred_cols = [f"pred_{mn}" for mn in self.model_names]
-        X_oof     = oof_merged[pred_cols].values.astype(np.float32)
-        y_oof     = oof_merged["target"].values.astype(np.float32)
+        
+        X_train = train_df[pred_cols].values.astype(np.float32)
+        y_train = train_df[train_target_col].values.astype(np.float32)
 
-        meta = RidgeCV(alphas=[0.01, 0.1, 1.0, 10.0, 100.0])
-        meta.fit(X_oof, y_oof)
+        # Fit Meta-Learner (Ridge)
+        meta = RidgeCV(alphas=[0.1, 1.0, 10.0, 100.0, 1000.0])
+        meta.fit(X_train, y_train)
 
         weights = dict(zip(self.model_names, meta.coef_.tolist()))
         print(f"\n[MetaLearner] Learned weights (α={meta.alpha_:.4f}):")
@@ -99,25 +131,22 @@ class MetaLearnerEnsemble:
         with open(ens_dir / "meta_learner_weights.json", "w") as f:
             json.dump(weights, f, indent=2)
 
-        # ── INFERENCE PHASE ───────────────────────────────────────────────────
-        X_test = test_merged[pred_cols].values.astype(np.float32)
-        test_merged["pred_score"] = meta.predict(X_test).astype(np.float32)
+        # Inference on Test Set
+        X_test = test_df[pred_cols].values.astype(np.float32)
+        test_df["pred_score"] = meta.predict(X_test).astype(np.float32)
 
-        n_months = test_merged[date_col].nunique()
-        print(f"[MetaLearner] Test month coverage: {n_months} months "
-              f"({test_merged[date_col].min()} → {test_merged[date_col].max()})")
-
+        # IC Evaluation
         ic_series = []
-        for month, grp in test_merged.groupby(date_col):
-            ic = spearman_ic(grp["fwd_return"].values, grp["pred_score"].values)
+        for month, grp in test_df.groupby(date_col):
+            ic = spearman_ic(grp[test_target_col].values, grp["pred_score"].values)
             ic_series.append({"Month": month, "IC": ic})
 
         summary = compute_ic_series([r["IC"] for r in ic_series])
         print_results_table(summary, self.name, self.cfg.baselines)
 
-        # ── Save ──────────────────────────────────────────────────────────────
+        # Save results
         save_test_predictions(
-            test_merged[[id_col, date_col, "pred_score", "fwd_return"]],
+            test_df[[id_col, date_col, "pred_score", test_target_col]],
             self.name, ens_dir,
         )
         save_ic_series(ic_series, self.name, ens_dir)

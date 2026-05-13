@@ -1,0 +1,18 @@
+{
+  "source": "ridge",
+  "annualized_return": 0.27171,
+  "annualized_vol": 0.194628,
+  "sharpe_ratio": 1.396044,
+  "max_drawdown": -0.426934,
+  "calmar_ratio": 0.636421,
+  "sortino_ratio": 1.919144,
+  "pct_positive_months": 72.32,
+  "total_return": 87.833397,
+  "long_return": 4850.472692,
+  "short_return": NaN,
+  "tc_drag_annualized": 0.010528,
+  "n_months": 224,
+  "long_pct_used": 0.1,
+  "short_pct_used": 0.1,
+  "tc_bps": 10.0
+}

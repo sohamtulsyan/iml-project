@@ -1,0 +1,18 @@
+{
+  "source": "random_forest",
+  "annualized_return": 0.376528,
+  "annualized_vol": 0.183905,
+  "sharpe_ratio": 2.047407,
+  "max_drawdown": -0.444107,
+  "calmar_ratio": 0.847832,
+  "sortino_ratio": 1.958367,
+  "pct_positive_months": 77.23,
+  "total_return": 388.63208,
+  "long_return": 4970.018114,
+  "short_return": -1.0,
+  "tc_drag_annualized": 0.01776,
+  "n_months": 224,
+  "long_pct_used": 0.1,
+  "short_pct_used": 0.1,
+  "tc_bps": 10.0
+}
